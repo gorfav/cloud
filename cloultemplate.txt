@@ -2,7 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
       "VPCCIDR": {
-          "Description": "CIDR Block for the VPC you are creating.",
+          "Description": "CIDR Block for the new VPC you are creating.",
           "Type": "String",
           "Default": "172.0.0.0/16",
           "AllowedPattern": "[a-zA-Z0-9]+\\..+"
