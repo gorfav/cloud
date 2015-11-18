@@ -1,0 +1,7 @@
+---
+# This Playbook is to test the cloudformation ansible plugin
+
+- name: provision a stack	
+  hosts: localhost
+  connection: local
+	
