@@ -1,0 +1,12 @@
+---
+# This Playbook would deploy the whole mongodb cluster with replication 
+
+- hosts: all
+  roles:
+  - role: common
+
+- hosts: mongo_servers
+  roles:
+  - role: mongod
+
+
