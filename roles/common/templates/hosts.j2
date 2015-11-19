@@ -1,4 +1,4 @@
 127.0.0.1 localhost
-{% for host in groups['all'] %}
+{% for host in groups["{{ec2.private_dns_name}}"] %}
 {{ hostvars[host]['ansible_' + iface].ipv4.address }}  {{ host }}
 {% endfor %}

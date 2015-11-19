@@ -1,6 +1,5 @@
 # The global variable file mongodb installation
 
-
 # The directory prefix where the database files would be stored
 mongodb_datadir_prefix: /data/
 
