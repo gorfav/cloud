@@ -6,9 +6,14 @@
   connection: local
 
   tasks:
-	- name: Get Info based On Tags
-	  ec2_remote_facts:
-		filters:
-			vpc-id: vpc-e427a58d
-			"tag:Name": deploymentServer
-	
+  - name: Get Info based On Tags
+    ec2_remote_facts:
+     region: eu-central-1
+     filters:
+       vpc-id: vpc-e427a58d
+       "tag:Name": deploymentServer
+    register: ec2
+  
+  -name: Get Instance Names
+   command: echo {{item.private_ip_address}}
+   with_items: ec2.instances
