@@ -1,7 +1,14 @@
 ---
 # This Playbook is to test the cloudformation ansible plugin
 
-- name: provision a stack	
-  hosts: localhost
+- hosts: localhost
+  gather_facts: no
   connection: local
+
+  tasks:
+	- name: Get Info based On Tags
+	  ec2_remote_facts:
+		filters:
+			vpc-id: vpc-e427a58d
+			"tag:Name": deploymentServer
 	
