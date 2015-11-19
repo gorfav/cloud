@@ -58,6 +58,7 @@
           "Default": "mykey",
           "Description": "Name of an existing EC2 KeyPair. All instances will launch with this KeyPair."
         },
+
   
       "VolumeSize": {
           "Type": "String",
