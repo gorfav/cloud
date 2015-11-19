@@ -1232,7 +1232,12 @@
                 {
                     "Key": "NodeReplicaSetIndex",
                     "Value": "0"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
                 }
+				
             ],
             "BlockDeviceMappings": [
                 {
@@ -1324,7 +1329,12 @@
                 {
                     "Key": "NodeReplicaSetIndex",
                     "Value": "0"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
                 }
+
             ],
             "BlockDeviceMappings": [
                 {
@@ -1516,7 +1526,12 @@
                 {
                     "Key": "NodeReplicaSetIndex",
                     "Value": "1"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
                 }
+				
             ],
             "BlockDeviceMappings": [
                 {
@@ -1605,7 +1620,12 @@
                 {
                     "Key": "NodeReplicaSetIndex",
                     "Value": "1"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
                 }
+				
             ],
             "BlockDeviceMappings": [
                 {
@@ -1796,7 +1816,12 @@
                 {
                     "Key": "NodeReplicaSetIndex",
                     "Value": "2"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
                 }
+				
             ],
             "BlockDeviceMappings": [
                 {
@@ -1885,7 +1910,12 @@
                 {
                     "Key": "NodeReplicaSetIndex",
                     "Value": "2"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
                 }
+				
             ],
             "BlockDeviceMappings": [
                 {
