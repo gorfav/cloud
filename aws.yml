@@ -13,6 +13,7 @@
        vpc-id: vpc-e427a58d
        "tag:Name": deploymentServer
     register: ec2
+  - debug: var=ec2
 
   - name: Get Instance Names
     command: echo {{item.private_ip_address}}
