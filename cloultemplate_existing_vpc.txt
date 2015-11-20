@@ -1,7 +1,14 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
-      "VPCCIDR": {
+      
+	  "VPC": {
+          "Description": "Name of the VPC you want to install the mongoDB Replica ",
+          "Type": "String",
+          "Default": "vpc-f2ed649b"          
+      },
+      
+	  "VPCCIDR": {
           "Description": "CIDR Block for the new and tested VPC you are creating.",
           "Type": "String",
           "Default": "172.0.0.0/16",
@@ -429,23 +436,8 @@
   
 
   "Resources": {
-    "VPC": {
-      "Type": "AWS::EC2::VPC",
-      "Properties": {
-        "CidrBlock": {
-                    "Ref": "VPCCIDR"
-                },
-        "EnableDnsSupport": "true",
-        "EnableDnsHostnames": "true",
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "pocVPC"
-          }
-        ]
-      }
-    },
-    "PrivateSubnet": {
+    
+	"PrivateSubnet": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
         "CidrBlock": {
@@ -467,8 +459,7 @@
             "Value": "Private subnet"
           }
         ]
-      },
-	  "DependsOn": "VPC"
+      }
     },
 	
     "PrivateRouteTable": {
@@ -483,8 +474,7 @@
                         "Value": "MongoDB"
                     }
                 ]
-            },
-            "DependsOn": "VPC"
+            }
         },
     "PrivateRoute": {
             "Type": "AWS::EC2::Route",
@@ -496,8 +486,7 @@
                 "InstanceId": {
                     "Ref": "NATInstance"
                 }
-            },
-            "DependsOn": "VPC"
+            }
     },
 	
    "PrimaryPublicNetworkAcl": {
@@ -512,8 +501,7 @@
                    "Value": "Public"
                }
            ]
-       },
-       "DependsOn": "VPC"
+       }
    },
 
     "PrivateSubnetRouteTableAssociation": {
@@ -525,8 +513,7 @@
             "RouteTableId": {
                 "Ref": "PrivateRouteTable"
             }
-        },
-        "DependsOn": "VPC"
+        }
     },
     "PrivateInboundPublicNetworkAclEntry": {
         "Type": "AWS::EC2::NetworkAclEntry",
@@ -543,8 +530,7 @@
                 "From": "0",
                 "To": "65535"
             }
-        },
-        "DependsOn": "VPC"
+        }
     },
     "PrivateOutBoundPublicNetworkAclEntry": {
         "Type": "AWS::EC2::NetworkAclEntry",
@@ -561,8 +547,7 @@
                 "From": "0",
                 "To": "65535"
             }
-        },
-        "DependsOn": "VPC"
+        }
     },
 	
 	
@@ -596,8 +581,7 @@
             "RouteTableId": {
                 "Ref": "PrivateRouteTable"
             }
-        },
-        "DependsOn": "VPC"
+        }
     },
     "PrivateInboundPublicNetworkAclEntry": {
         "Type": "AWS::EC2::NetworkAclEntry",
@@ -614,8 +598,7 @@
                 "From": "0",
                 "To": "65535"
             }
-        },
-        "DependsOn": "VPC"
+        }
     },
     "PrivateOutBoundPublicNetworkAclEntry": {
         "Type": "AWS::EC2::NetworkAclEntry",
@@ -632,8 +615,7 @@
                 "From": "0",
                 "To": "65535"
             }
-        },
-        "DependsOn": "VPC"
+        }
     },
 	
     "PublicAdminSubnet": {
@@ -2084,8 +2066,7 @@
           }
         ]	
 	
-	},
-	  "DependsOn": "VPC"
+	}
     
 	}
 	,
