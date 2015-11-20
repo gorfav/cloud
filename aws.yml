@@ -11,21 +11,37 @@
     ec2_remote_facts:
      region: eu-central-1
      filters:
-       vpc-id: vpc-05d55c6c
-       "tag:Name": deploymentServer
+       vpc-id: vpc-5da52c34
+       "tag:Type": MongoDBReplica
     register: ec2
 
-  
   - name: Add all instance public IPs to host group
-    add_host: hostname={{ item.private_dns_name}} groups=mongo_servers
+    add_host: hostname={{ item.private_ip_address}}
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              groups=mongo_servers
+              tag={{ec2}}
     with_items: ec2.instances
 
-  - name: Install my ssh key
-    sudo: yes
-    sudo_user: ec2-user
+  - name: List hosts
+    command: echo {{item.private_dns_name}}
+    with_items: ec2.instances
+
+  - name: Change private key permission
+    file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
+
+- hosts: mongo_servers
+  gather_facts: yes
+  remote_user: ec2-user
+
+  pre_tasks:
+  - name: Install ansible key
     authorized_key: user=ec2-user
-                    key="{{lookup('file', '/home/ansible/.ssh/mykey.pub')}}"
-    delegate_to: mongo_servers
+                    key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
+
+  - name: List Object
+    command: echo "{{tag}}"
+  - debug: var=tag
+
 
   roles:
-    - { role: common, mongoDBInstances: "{{ec2.instances}}", delegate_to: mongo_servers}
+  - { role: common, mongoDBInstances: "{{tag.instances}}" }
