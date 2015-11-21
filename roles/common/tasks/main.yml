@@ -33,10 +33,12 @@
    - bc
    - python-pip
    
-
+- name: Install pip
+  easy_install: name=pip
+  
 - name: Install the latest pymongo package
   sudo: yes
-  pip: name=pymongo state=latest executable=pip-2.7 use_mirrors=no
+  pip: name=pymongo state=latest executable=/usr/local/bin/pip use_mirrors=no
 
 - name: Create the iptables file
   sudo: yes
