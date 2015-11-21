@@ -7,11 +7,18 @@
   connection: local
 
   pre_tasks:
+  
+  - ec2_vpc_subnet_facts:
+    filters:
+      "tag:Name": stagingVPC
+    register: vpc  
+  - debug: var=vpc    
+      
   - name: Get Info based On Tags
     ec2_remote_facts:
      region: eu-central-1
      filters:
-       vpc-id: vpc-5da52c34
+       vpc-id: vpc.vpc-id
        "tag:Type": MongoDBReplica
     register: ec2
 
