@@ -31,7 +31,7 @@
    - mongo-10gen
    - mongo-10gen-server
    - bc
-
+   - python-pip
 
 - name: Install the latest pymongo package
   sudo: yes
