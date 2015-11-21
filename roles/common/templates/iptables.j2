@@ -6,7 +6,7 @@
 :OUTPUT ACCEPT [0:0]
 {% if 'mongo_servers' in group_names %}
 {% for host in groups['mongo_servers'] %}
--A INPUT -p tcp  --dport {{ hostvars[host]['mongod_port'] }} -j  ACCEPT
+-A INPUT -p tcp  --dport {{ mongod_port }} -j  ACCEPT
 {% endfor %}
 {% endif %}
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
