@@ -3,6 +3,8 @@
 # The directory prefix where the database files would be stored
 mongodb_datadir_prefix: /data/
 mongod_port: 27017
+stackname: "{{ lookup('env','STACK_NAME') }}"
+
 
 # The interface where the mongodb process should listen on.
 # Defaults to the first interface. Change this to:
