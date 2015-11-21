@@ -6,19 +6,20 @@
   sudo: yes
   connection: local
 
-  pre_tasks:
+  tasks:
   
-  - ec2_vpc_subnet_facts:
-    filters:
-      "tag:Name": stagingVPC
-    register: vpc  
-  - debug: var=vpc    
+  - name: Get VPC
+    ec2_vpc_subnet_facts:
+     region: eu-central-1
+     filters:
+        "tag:aws:cloudformation:stack-name": pocMNG
+    register: curvpc 
       
   - name: Get Info based On Tags
     ec2_remote_facts:
      region: eu-central-1
      filters:
-       vpc-id: vpc.vpc-id
+       vpc-id: "{{curvpc.subnets[0].vpc_id}}"
        "tag:Type": MongoDBReplica
     register: ec2
 

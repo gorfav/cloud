@@ -799,9 +799,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "80",
                         "ToPort": "80",
-                        "CidrIp": {
-                            "Ref": "RemoteAccessCIDR"
-                        }
+                        "CidrIp": "0.0.0.0/0"
                     },
                     {
                         "IpProtocol": "tcp",
@@ -1084,7 +1082,7 @@
                 }
             ]
         },        
-        "DependsOn": [ "PrivateSubnet","sgbastionServerSG" ]
+        "DependsOn": [ "PrivateSubnet","sgbastionServerSG", "sgwebServerSG"]
     },
 	"InboundRule": {
 			  "Type": "AWS::EC2::SecurityGroupIngress",
@@ -1106,7 +1104,7 @@
 				}
 			  }
 		},
-  	 "InboundRuleforDeploy": {
+  	 "InboundRuleforDeployWeb": {
 			  "Type": "AWS::EC2::SecurityGroupIngress",
 			  "Properties":{
 				"IpProtocol": "tcp",
