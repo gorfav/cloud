@@ -2276,6 +2276,14 @@
                     },
                     {
                         "IpProtocol": "tcp",
+                        "FromPort": "27017",
+                        "ToPort": "27019",
+                        "CidrIp": {
+                            "Ref": "PrivateReplicaSubnet"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
                         "CidrIp": {

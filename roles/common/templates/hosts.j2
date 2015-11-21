@@ -1,4 +1,4 @@
-127.0.0.1 localhost {{ mongoDBInstances.private_dns_name  }}
+127.0.0.1 localhost 
 {% for host in mongoDBInstances %}
 {{ host.private_ip_address }}  {{ host.private_dns_name  }}
 {% endfor %}

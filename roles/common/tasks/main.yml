@@ -33,8 +33,13 @@
    - bc
    - python-pip
    
-- name: Install pip
-  easy_install: name=pip
+- name: update pip
+  sudo: yes
+  shell: "python -m pip install --upgrade --force pip"
+   
+- name: Install the latest pymongo package
+  sudo: yes
+  pip: name=pymongo state=latest executable=/usr/local/bin/pip use_mirrors=no
   
 - name: Install the latest pymongo package
   sudo: yes
