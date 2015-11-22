@@ -60,7 +60,7 @@
     become_method: sudo
     become_user: mongod
     get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
-         dest= "/tmp/primer-dataset.json"
+         dest="/tmp/primer-dataset.json"
          
   
   - name: Import dataset into mongodb
