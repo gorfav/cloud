@@ -55,6 +55,11 @@
   - { role: common, mongoDBInstances: "{{tag.instances}}" }
   
   post_tasks:
+  - name: Start Mongodb
+    become: yes
+    become_method: sudo
+    service: name=mongod stae=started
+    
   - name: Get MongoDB example
     become: yes
     become_method: sudo
