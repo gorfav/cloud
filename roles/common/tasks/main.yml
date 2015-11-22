@@ -49,4 +49,4 @@
 - name: Create the iptables file
   sudo: yes
   template: src=iptables.j2 dest=/etc/sysconfig/iptables
-  notify: restart iptables
+  notify: restart iptables,restart mongod
