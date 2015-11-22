@@ -60,11 +60,11 @@
     become_method: sudo
     become_user: mongod
     get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
-         dest= "{{ mongodb_datadir_prefix }}/primer-dataset.json"
+         dest= "/tmp/primer-dataset.json"
          
   
   - name: Import dataset into mongodb
     become: yes
     become_method: sudo
     become_user: mongod
-    shell: mongoimport --db test --collection restaurants --drop --file {{ mongodb_datadir_prefix }}/primer-dataset.json
+    shell: mongoimport --db test --collection restaurants --drop --file /tmp/primer-dataset.json
