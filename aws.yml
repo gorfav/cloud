@@ -58,7 +58,7 @@
   - name: Start Mongodb
     become: yes
     become_method: sudo
-    service: name=mongod stae=started
+    service: name=mongod state=started
     
   - name: Get MongoDB example
     become: yes
