@@ -12,7 +12,7 @@
     ec2_vpc_subnet_facts:
      region: eu-central-1
      filters:
-        "tag:aws:cloudformation:stack-name": {{stackname}}
+        "tag:aws:cloudformation:stack-name": "{{stackname}}"
     register: curvpc 
       
   - name: Get Info based On Tags

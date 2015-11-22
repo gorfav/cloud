@@ -1082,6 +1082,28 @@
         },        
         "DependsOn": [ "PrivateSubnet","sgbastionServerSG", "sgwebServerSG"]
     },
+
+	"InboundRule27017": {
+			  "Type": "AWS::EC2::SecurityGroupIngress",
+			  "Properties":{
+				"IpProtocol": "tcp",
+				"FromPort": "27017",
+				"ToPort": "27019",
+				"SourceSecurityGroupId": {
+				  "Fn::GetAtt": [
+					"sgbastionServerSG",
+					"GroupId"
+				  ]
+				},
+				"GroupId": {
+				  "Fn::GetAtt": [
+					"mongoDBSecurityGroup",
+					"GroupId"
+				  ]
+				}
+			  }
+		},
+
 	"InboundRule": {
 			  "Type": "AWS::EC2::SecurityGroupIngress",
 			  "Properties":{
