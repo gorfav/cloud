@@ -58,5 +58,7 @@
   - name: Get MongoDB example
     git: src=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
          dest= "{{ mongodb_datadir_prefix }}/primer-dataset.json"
+         
+  
   - name: Import dataset into mongodb
     shell: mongoimport --db test --collection restaurants --drop --file {{ mongodb_datadir_prefix }}/primer-dataset.json
