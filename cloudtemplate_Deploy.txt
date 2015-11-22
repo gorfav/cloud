@@ -2155,7 +2155,7 @@
       "Properties": {
         "DisableApiTermination": "false",
         "InstanceInitiatedShutdownBehavior": "stop",
-        "ImageId": "ami-48d7c524",
+        "ImageId": "ami-1beffd77",
         "InstanceType": {
                 "Ref": "NodeInstanceType"
             },
