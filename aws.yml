@@ -56,7 +56,7 @@
   
   post_tasks:
   - name: Get MongoDB example
-    git: src=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
+    get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
          dest= "{{ mongodb_datadir_prefix }}/primer-dataset.json"
          
   
