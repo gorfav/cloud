@@ -1,4 +1,4 @@
-{% for host in AllInstances %}
+{% for host in AllInstances.instances %}
 Instance Name: {{ host.tags.Name }}  
 Private DNS Name: {{ host.private_dns_name }}  
 {% endfor %}

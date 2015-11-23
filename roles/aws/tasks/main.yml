@@ -9,4 +9,4 @@
 
   - name: Create the email template  
     connection: local
-    template: src=email.j2 dest=/etc/hosts
+    template: src=email.j2 dest=/tmp/email.txt
