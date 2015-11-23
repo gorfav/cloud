@@ -10,13 +10,15 @@
   - name: Create the email template
     connection: local
     template: src=email.j2 dest=/tmp/email.txt
+	register: result
   - name: Send Email with Details
     local_action: mail
                   subject="Ansible MongoDB Creation Report"
                   from=ansible@poc.nl
                   to=gordon.fava@t-mobile.nl
                   body="{{ lookup('file', '/tmp/email.txt') }}"
+	changed_when: result|success
   - name: Remove email file
     become: yes
-	become_method: sudo
-    file: path=/tmp/email.txt stae=absent
+    become_method: sudo
+    file: path=/tmp/email.txt state=absent
