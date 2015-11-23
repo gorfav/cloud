@@ -1,12 +1,12 @@
-Instance Information
+Instance Information for Stack: {{stackname}}
 =======================================================================
 {% for host in AllInstances.instances %}
-Instance Name: {{ host.tags.Name }}  
-Stack Name: "{{ host.tags.aws:cloudformation:stack-name }}"
-Private DNS Name: {{ host.private_dns_name }}  
-Private IP Address: {{ host.private_ip_address }}  
-AWS Region: {{ host.region }}  
-Instance ID: {{ host.id }}  
-VPC ID: {{ host.vpc_id }}  
+Instance Name: {{ host.tags.Name }}
+Public DNS Name: {{ host.public_dns_name }}
+Private DNS Name: {{ host.private_dns_name }}
+Private IP Address: {{ host.private_ip_address }}
+AWS Region: {{ host.region }}
+Instance ID: {{ host.id }}
+VPC ID: {{ host.vpc_id }}
 =======================================================================
 {% endfor %}

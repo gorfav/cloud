@@ -10,3 +10,11 @@
   - name: Create the email template  
     connection: local
     template: src=email.j2 dest=/tmp/email.txt
+	
+  - name: Send Email with Details
+    local_action: mail
+                  subject="Ansible MongoDB Creation Report"
+                  from=ansible@poc.nl
+                  to=gordon.fava@t-mobile.nl
+                  body="{{ lookup('file', '/tmp/email.txt') }}"
+	
