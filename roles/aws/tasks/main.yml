@@ -17,4 +17,6 @@
                   to=gordon.fava@t-mobile.nl
                   body="{{ lookup('file', '/tmp/email.txt') }}"
   - name: Remove email file
+    become: yes
+	become_method: sudo
     file: path=/tmp/email.txt stae=absent
