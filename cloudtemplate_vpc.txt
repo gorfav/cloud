@@ -1,0 +1,2371 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+     "VPC": {
+          "Description": "This is the VPC ID",
+          "Type": "String",
+          "Default": "vpc-f2ed649b"          
+      },
+	  "InternetGateway":
+	  {
+          "Description": "This is the IGW ID",
+          "Type": "String",
+          "Default": "igw-cd6fc8a4"          
+      },
+      "VPCCIDR": {
+          "Description": "CIDR Block for the new and tested VPC you are creating.",
+          "Type": "String",
+          "Default": "172.0.0.0/16",
+          "AllowedPattern": "[a-zA-Z0-9]+\\..+"
+      },
+      "RemoteAccessCIDR": {
+          "Description": "CORPORATE CIDR from where you could SSH into MongoDB cluster via NAT",
+          "Type": "String",
+          "MinLength": "9",
+          "MaxLength": "18",
+          "Default": "84.241.248.0/24",
+          "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+          "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x."
+        },
+      "ClusterReplicaSetCount": {
+          "Description": "Number of Replica Set Members. Choose 1 or 3",
+          "Type": "String",
+          "Default": "1",
+          "AllowedValues": [
+              "1",
+              "3"
+          ]
+      },		
+      "PublicSubnet": {
+          "Description": "CIDR Block for the Public Subnet located in the new VPC.",
+          "Type": "String",
+          "Default": "172.0.1.0/24",
+          "AllowedPattern": "[a-zA-Z0-9]+\\..+"
+        },
+		
+      "PublicSubnetAdmin": {
+          "Description": "CIDR Block for the ADMIN Public Subnet located in the new VPC.",
+          "Type": "String",
+          "Default": "172.0.2.0/24",
+          "AllowedPattern": "[a-zA-Z0-9]+\\..+"
+        },
+		
+      "PrivateReplicaSubnet": {
+          "Description": "Private Subnet where Primary Replica Set will be deployed.",
+          "Type": "String",
+          "Default": "172.0.50.0/24",
+          "AllowedPattern": "[a-zA-Z0-9]+\\..+"
+        },    
+
+      "PrivateSubnetAdmin": {
+          "Description": "Private Subnet where deploy Server Set will be deployed.",
+          "Type": "String",
+          "Default": "172.0.60.0/24",
+          "AllowedPattern": "[a-zA-Z0-9]+\\..+"
+        },    
+		
+      "KeyName": {
+          "Type": "AWS::EC2::KeyPair::KeyName",
+          "Default": "mykey",
+          "Description": "Name of an existing EC2 KeyPair. All instances will launch with this KeyPair."
+        },
+
+  
+      "VolumeSize": {
+          "Type": "String",
+          "Description": "EBS Volume Size (data) to be attached to node in GBs",
+          "Default": "400"
+      },
+      "VolumeType": {
+          "Type": "String",
+          "Description": "EBS Volume Type (data) to be attached to node in GBs [io1,gp2]",
+          "Default": "gp2",
+          "AllowedValues": [
+              "gp2",
+              "io1"
+          ]
+      },
+      "Iops": {
+          "Type": "String",
+          "Description": "Iops of EBS volume when io1 type is chosen. Otherwise ignored",
+          "Default": "100"
+      },
+	  "stackType": {
+		"Type": "String",
+		"Description": "true/false - Deteremines weather NAT is deletable or not",
+		"Default": "false"
+	  },
+  
+      "NATInstanceType": {
+          "Description": "Amazon EC2 instance type for the NAT Instances.",
+          "Type": "String",
+          "Default": "t2.micro",
+          "AllowedValues": [
+			  "t2.micro",
+              "t2.small",
+              "t2.medium"
+          ]
+      },
+        "NodeInstanceType": {
+          "Description": "Amazon EC2 instance type for the MongoDB nodes.",
+          "Type": "String",
+          "Default": "m3.medium",
+          "AllowedValues": [
+			  "t2.micro",
+              "m3.medium",
+              "m3.large",
+              "m3.xlarge",
+              "m3.2xlarge",
+              "c3.large",
+              "c3.xlarge",
+              "c3.2xlarge",
+              "c3.4xlarge",
+              "c3.8xlarge",
+              "r3.large",
+              "r3.xlarge",
+              "r3.2xlarge",
+              "r3.4xlarge",
+              "r3.8xlarge",
+              "i2.xlarge",
+              "i2.2xlarge",
+              "i2.4xlarge",
+              "i2.8xlarge"
+            ]
+        },
+      "AvailabilityZone0": {
+          "Description": "Pick an AvailabilityZone for Subnet creation (PrimaryNode)",		  
+          "Type": "AWS::EC2::AvailabilityZone::Name",
+		  "Default": "eu-central-1a"
+      }
+	},
+
+  
+    "Conditions": {
+        "UsePIops": {
+            "Fn::Equals": [
+                {
+                    "Ref": "VolumeType"
+                },
+                "io1"
+            ]
+        },
+        "UseGP2": {
+            "Fn::Equals": [
+                {
+                    "Ref": "VolumeType"
+                },
+                "gp2"
+            ]
+        },
+
+        "CreateSingleReplicaSet": {
+            "Fn::Equals": [
+                {
+                    "Ref": "ClusterReplicaSetCount"
+                },
+                "1"
+            ]
+        },
+        "CreateThreeReplicaSet": {
+            "Fn::Equals": [
+                {
+                    "Ref": "ClusterReplicaSetCount"
+                },
+                "3"
+            ]
+        },
+        "UsePIopsAndCreateNoShard": {
+            "Fn::And": [
+                {
+                    "Condition": "UsePIops"
+                },      
+				{
+                    "Condition": "UsePIops"
+                }
+            ]
+        },
+        "UseGP2AndCreateNoShard": {
+            "Fn::And": [
+                {
+                    "Condition": "UseGP2"
+                },
+				{
+                    "Condition": "UseGP2"
+                }
+
+            ]
+        },
+		
+        "IfSecondaryReplicaNode0": {
+            "Fn::And": [
+                {
+                    "Condition": "CreateThreeReplicaSet"
+                },
+				{
+                    "Condition": "CreateThreeReplicaSet"
+                }
+				
+            ]
+        },
+        "IfSecondaryReplicaNode1": {
+            "Fn::And": [
+                {
+                    "Condition": "CreateThreeReplicaSet"
+                },
+				{
+                    "Condition": "CreateThreeReplicaSet"
+                }
+				
+            ]
+        },
+        "UsePIopsAndIfSecondaryReplicaNode0": {
+            "Fn::And": [
+                {
+                    "Condition": "UsePIops"
+                },
+                {
+                    "Condition": "IfSecondaryReplicaNode0"
+                }
+            ]
+        },
+        "UseGP2AndIfSecondaryReplicaNode0": {
+            "Fn::And": [
+                {
+                    "Condition": "UseGP2"
+                },
+                {
+                    "Condition": "IfSecondaryReplicaNode0"
+                }
+            ]
+        },
+		
+        "UsePIopsAndIfSecondaryReplicaNode1": {
+            "Fn::And": [
+                {
+                    "Condition": "UsePIops"
+                },
+                {
+                    "Condition": "IfSecondaryReplicaNode1"
+                }
+            ]
+        },
+		
+        "UseGP2AndIfSecondaryReplicaNode1": {
+            "Fn::And": [
+                {
+                    "Condition": "UseGP2"
+                },
+                {
+                    "Condition": "IfSecondaryReplicaNode1"
+                }
+            ]
+        }
+	},	
+  
+    "Mappings": {
+        "InstanceTypeArchFromNode": {
+            "m3.medium": {
+                "Arch": "64HVM"
+            },
+            "m3.large": {
+                "Arch": "64HVM"
+            },
+            "m3.xlarge": {
+                "Arch": "64HVM"
+            },
+            "m3.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.large": {
+                "Arch": "64HVM"
+            },
+            "c3.xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.8xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.large": {
+                "Arch": "64HVM"
+            },
+            "r3.xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.8xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.8xlarge": {
+                "Arch": "64HVM"
+            }
+        },
+        "AWSNATAMI": {
+            "eu-central-1": {
+                "AMI": "ami-46073a5b"
+            },
+            "sa-east-1": {
+                "AMI": "ami-fbfa41e6"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-03cf3903"
+            },
+            "eu-west-1": {
+                "AMI": "ami-6975eb1e"
+            },
+            "us-east-1": {
+                "AMI": "ami-303b1458"
+            },
+            "us-west-1": {
+                "AMI": "ami-7da94839"
+            },
+            "us-west-2": {
+                "AMI": "ami-69ae8259"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-e7ee9edd"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-b49dace6"
+            }
+        },
+        "InstanceTypeArch": {
+            "t2.micro": {
+                "Arch": "64HVM"
+            },
+            "m3.medium": {
+                "Arch": "64HVM"
+            },
+            "m3.large": {
+                "Arch": "64HVM"
+            },
+            "m3.xlarge": {
+                "Arch": "64HVM"
+            },
+            "m3.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.large": {
+                "Arch": "64HVM"
+            },
+            "c3.xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "c3.8xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.large": {
+                "Arch": "64HVM"
+            },
+            "r3.xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "r3.8xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.2xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "i2.8xlarge": {
+                "Arch": "64HVM"
+            }
+        },
+        "AMI": {
+            "eu-west-1": {
+                "64HVM": "ami-bff32ccc"
+            },
+            "ap-southeast-1": {
+                "64HVM": "ami-c9b572aa"
+            },
+            "ap-southeast-2": {
+                "64HVM": "ami-48d38c2b"
+            },
+            "eu-central-1": {
+                "64HVM": "ami-bc5b48d0"
+            },
+            "ap-northeast-1": {
+                "64HVM": "ami-383c1956"
+            },
+            "us-east-1": {
+                "64HVM": "ami-60b6c60a"
+            },
+            "sa-east-1": {
+                "64HVM": "ami-6817af04"
+            },
+            "us-west-1": {
+                "64HVM": "ami-d5ea86b5"
+            },
+            "us-west-2": {
+                "64HVM": "ami-f0091d91"
+            }
+        }
+    },
+  
+
+  "Resources": {
+    "PrivateSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": {
+			"Ref": "PrivateReplicaSubnet"
+		},
+        "AvailabilityZone": {
+			"Ref": "AvailabilityZone0"
+		},
+        "VpcId": {
+           "Ref": "VPC"
+        },
+        "Tags": [
+         {
+			"Key": "Application",
+            "Value": "MongoDB"
+         },		
+          {
+            "Key": "Name",
+            "Value": "Private subnet"
+          }
+        ]
+      }
+    },
+	
+    "PrivateRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+				"VpcId": {
+				   "Ref": "VPC"
+				},
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": "MongoDB"
+                    }
+                ]
+            }
+        },
+    "PrivateRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "InstanceId": {
+                    "Ref": "NATInstance"
+                }
+            }
+    },
+	
+   "PrimaryPublicNetworkAcl": {
+       "Type": "AWS::EC2::NetworkAcl",
+       "Properties": {
+           "VpcId": {
+               "Ref": "VPC"
+           },
+           "Tags": [
+               {
+                   "Key": "Network",
+                   "Value": "Public"
+               }
+           ]
+       }
+   },
+
+    "PrivateSubnetRouteTableAssociation": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+            "SubnetId": {
+                "Ref": "PrivateSubnet"
+            },
+            "RouteTableId": {
+                "Ref": "PrivateRouteTable"
+            }
+        }
+    },
+    "PrivateInboundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "89",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "false",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+    "PrivateOutBoundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "88",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "true",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+	
+	
+    "PrivateAdminSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": {
+			"Ref": "PrivateSubnetAdmin"
+		},
+        "AvailabilityZone": {
+			"Ref": "AvailabilityZone0"
+		},
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Private Admin subnet"
+          }
+        ]
+      }
+    },
+
+    "PrivateAdminSubnetRouteTableAssociation": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+            "SubnetId": {
+                "Ref": "PrivateAdminSubnet"
+            },
+            "RouteTableId": {
+                "Ref": "PrivateRouteTable"
+            }
+        }
+    },
+    "PrivateInboundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "89",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "false",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+    "PrivateOutBoundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "88",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "true",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+	
+    "PublicAdminSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": {
+                  "Ref": "PublicSubnetAdmin"
+                },
+        "AvailabilityZone": {
+			"Ref": "AvailabilityZone0"
+		},
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+		  {
+            "Key": "Application",
+            "Value": "Deployment Server"
+          },
+          {
+            "Key": "Name",
+            "Value": "PublicAdmin subnet"
+          }
+        ]
+      }
+    },
+    "APPPublicSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": {
+              "Ref": "PublicSubnet"
+        },
+        "AvailabilityZone": {
+			"Ref": "AvailabilityZone0"
+		},
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public subnet"
+          }
+        ]
+      }
+    },
+	
+    "NATInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+         "DisableApiTermination": {
+			"Ref": "stackType"
+			},
+        "ImageId": {
+          "Fn::FindInMap": [
+				"AWSNATAMI",
+				{
+                    "Ref": "AWS::Region"
+                },
+            "AMI"
+          ]
+          },
+        "InstanceType": {
+			"Ref": "NATInstanceType"
+        },
+        "KeyName": {
+			"Ref": "KeyName"
+        },
+
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "NAT Server"
+          }
+        ],
+        "NetworkInterfaces": [
+            {
+				"NetworkInterfaceId": {
+                "Ref": "NATInterface"
+                },
+            "DeviceIndex": "0"
+            }
+        ]
+      }
+    },
+	
+    "NATInterface": {
+            "Type": "AWS::EC2::NetworkInterface",
+			"AssociatePublicIpAddress": "true",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "APPPublicSubnet"
+                },
+                "Description": "External interface for the NAT instance",
+                "GroupSet": [
+                    {
+                        "Ref": "NATSecurityGroup"
+                    }
+                ],
+                "SourceDestCheck": "false",
+                "Tags": [
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+    "NATSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable internal access to the NAT device",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "icmp",
+                        "FromPort": "8",
+                        "ToPort": "-1",
+                        "CidrIp": {
+                            "Ref": "RemoteAccessCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "RemoteAccessCIDR"
+                        }
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "PrivateReplicaSubnet"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "PrivateSubnetAdmin"
+                        }
+                    },
+                    {
+                        "IpProtocol": "icmp",
+                        "FromPort": "8",
+                        "ToPort": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "APPPublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": "NAT"
+                    }
+                ]
+            }
+        },		
+        "PublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "APPPublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+
+        "AdminPublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": "Deployment"
+                    }
+                ]
+            }
+        },
+		
+        "AdminPublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "AdminPublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+
+    "PublicNetworkAcl": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+		"Tags": [
+            {
+			"Key": "Network",
+			"Value": "Public"
+            }
+        ]
+      }
+    },
+	
+	"APPPublicSubnetRouteTableAssociation": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+            "SubnetId": {
+                "Ref": "APPPublicSubnet"
+            },
+            "RouteTableId": {
+                "Ref": "APPPublicRouteTable"
+            }
+        }
+    },
+    "APPInboundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "101",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "false",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+    "APPOutBoundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "101",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "true",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+
+    "AdminPublicSubnetRouteTableAssociation": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+            "SubnetId": {
+                "Ref": "PublicAdminSubnet"
+            },
+            "RouteTableId": {
+                "Ref": "AdminPublicRouteTable"
+            }
+        }
+    },
+    "AdminInboundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "100",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "false",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+    "AdminOutBoundPublicNetworkAclEntry": {
+        "Type": "AWS::EC2::NetworkAclEntry",
+        "Properties": {
+            "NetworkAclId": {
+                "Ref": "PublicNetworkAcl"
+            },
+            "RuleNumber": "100",
+            "Protocol": "6",
+            "RuleAction": "allow",
+            "Egress": "true",
+            "CidrBlock": "0.0.0.0/0",
+            "PortRange": {
+                "From": "0",
+                "To": "65535"
+            }
+        }
+    },
+
+    "PrimaryReplicaNodeInterface": {
+        "Type": "AWS::EC2::NetworkInterface",
+        "Properties": {
+            "Description": "Network Interface for Mongo Node",
+            "SubnetId": {
+                "Ref": "PrivateSubnet"
+            },
+            "GroupSet": [
+                {
+                    "Ref": "mongoDBSecurityGroup"
+                }
+            ],
+            "SourceDestCheck": "true",
+            "Tags": [
+                {
+                    "Key": "Network",
+                    "Value": "Private"
+                }
+            ]
+        },        
+        "DependsOn": "PrivateSubnet"
+    },
+    "mongoDBSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+            "GroupDescription": "Enable external access and allow communication ",
+            "VpcId": {
+                "Ref": "VPC"
+            },
+            "SecurityGroupIngress": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": "27017",
+                    "ToPort": "27030",
+                    "CidrIp": {
+                        "Ref": "RemoteAccessCIDR"
+                    }
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": "28017",
+                    "ToPort": "28017",
+                    "CidrIp": {
+                        "Ref": "RemoteAccessCIDR"
+                    }
+                }
+            ],
+            "SecurityGroupEgress": [
+                {
+                    "IpProtocol": "-1",
+                    "CidrIp": "0.0.0.0/0",
+                    "FromPort": "1",
+                    "ToPort": "65535"
+                }
+            ]
+        },        
+        "DependsOn": [ "PrivateSubnet","sgbastionServerSG", "sgwebServerSG"]
+    },
+
+	"InboundRule27017": {
+			  "Type": "AWS::EC2::SecurityGroupIngress",
+			  "Properties":{
+				"IpProtocol": "tcp",
+				"FromPort": "27017",
+				"ToPort": "27019",
+				"SourceSecurityGroupId": {
+				  "Fn::GetAtt": [
+					"sgbastionServerSG",
+					"GroupId"
+				  ]
+				},
+				"GroupId": {
+				  "Fn::GetAtt": [
+					"mongoDBSecurityGroup",
+					"GroupId"
+				  ]
+				}
+			  }
+		},
+
+	"InboundRule": {
+			  "Type": "AWS::EC2::SecurityGroupIngress",
+			  "Properties":{
+				"IpProtocol": "tcp",
+				"FromPort": "22",
+				"ToPort": "22",
+				"SourceSecurityGroupId": {
+				  "Fn::GetAtt": [
+					"sgbastionServerSG",
+					"GroupId"
+				  ]
+				},
+				"GroupId": {
+				  "Fn::GetAtt": [
+					"mongoDBSecurityGroup",
+					"GroupId"
+				  ]
+				}
+			  }
+		},
+  	 "InboundRuleforDeployWeb": {
+			  "Type": "AWS::EC2::SecurityGroupIngress",
+			  "Properties":{
+				"IpProtocol": "tcp",
+				"FromPort": "22",
+				"ToPort": "22",
+				"SourceSecurityGroupId": {
+				  "Fn::GetAtt": [
+					"sgwebServerSG",
+					"GroupId"
+				  ]
+				},
+				"GroupId": {
+				  "Fn::GetAtt": [
+					"mongoDBSecurityGroup",
+					"GroupId"
+				  ]
+				}
+			  }
+		},
+
+  	 "InboundRuleforDeploy": {
+			  "Type": "AWS::EC2::SecurityGroupIngress",
+			  "Properties":{
+				"IpProtocol": "tcp",
+				"FromPort": "22",
+				"ToPort": "22",
+				"SourceSecurityGroupId": {
+				  "Fn::GetAtt": [
+					"mongoDBSecurityGroup",
+					"GroupId"
+				  ]
+				},
+				"GroupId": {
+				  "Fn::GetAtt": [
+					"NATSecurityGroup",
+					"GroupId"
+				  ]
+				}
+			  }
+		},
+		
+    "PrivateIAMRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "ec2.amazonaws.com"
+                            ]
+                        },
+                        "Action": [
+                            "sts:AssumeRole"
+                        ]
+                    }
+                ]
+            },
+            "Path": "/",
+            "Policies": [
+                {
+                    "PolicyName": "Backup",
+                    "PolicyDocument": {
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:*",
+                                    "ec2:Describe*",
+                                    "ec2:AttachNetworkInterface",
+                                    "ec2:AttachVolume",
+                                    "ec2:CreateTags",
+                                    "ec2:CreateVolume",
+                                    "ec2:RunInstances",
+                                    "ec2:StartInstances",
+                                    "ec2:DeleteVolume",
+                                    "ec2:CreateSecurityGroup",
+                                    "ec2:CreateSnapshot"
+                                ],
+                                "Resource": "*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "dynamodb:*",
+                                    "dynamodb:Scan",
+                                    "dynamodb:Query",
+                                    "dynamodb:GetItem",
+                                    "dynamodb:BatchGetItem",
+                                    "dynamodb:UpdateTable"
+                                ],
+                                "Resource": [
+                                    "*"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        },        
+        "DependsOn": "PrivateSubnet"
+    },
+    "PrimaryReplicaNode0NodeIAMProfile": {
+        "Type": "AWS::IAM::InstanceProfile",
+        "Properties": {
+            "Path": "/",
+            "Roles": [
+                {
+                    "Ref": "PrivateIAMRole"
+                }
+            ]
+        },
+        "DependsOn": "PrivateSubnet"
+    },
+    "PrimaryReplicaNode0NodeInstanceGP2": {
+        "Type": "AWS::EC2::Instance",
+        "Condition": "UseGP2AndCreateNoShard",
+        "Metadata": {
+            "HostRole": "MongoDB Node"
+        },
+        "Properties": {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": {
+                        "Ref": "PrimaryReplicaNodeInterface"
+                    },
+                    "DeviceIndex": "0"
+                }
+            ],
+            "KeyName": {
+                "Ref": "KeyName"
+            },
+            "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+            "IamInstanceProfile": {
+                "Ref": "PrimaryReplicaNode0NodeIAMProfile"
+            },
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "PrimaryReplicaNode0"
+                },
+                {
+                    "Key": "ClusterReplicaSetCount",
+                    "Value": {
+                        "Ref": "ClusterReplicaSetCount"
+                    }
+                },
+                {
+                    "Key": "NodeReplicaSetIndex",
+                    "Value": "0"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
+                }
+				
+            ],
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvdg",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "250"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdh",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "200"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdf",
+                    "Ebs": {
+                        "VolumeSize": {
+                            "Ref": "VolumeSize"
+                        },
+                        "VolumeType": "gp2",
+                        "DeleteOnTermination": "true"
+                    }
+                }
+            ],            
+            "InstanceType": {
+                "Ref": "NodeInstanceType"
+            }
+        },
+        "DependsOn": "PrivateSubnet"
+    },
+	
+	
+    "PrimaryReplicaNode0NodeInstanceIO1": {
+        "Type": "AWS::EC2::Instance",
+        "Condition": "UsePIopsAndCreateNoShard",
+        "Metadata": {
+            "HostRole": "MongoDB Node"
+        },
+        "Properties": {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": {
+                        "Ref": "PrimaryReplicaNodeInterface"
+                    },
+                    "DeviceIndex": "0"
+                }
+            ],
+            "KeyName": {
+                "Ref": "KeyName"
+            },
+            "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+            "IamInstanceProfile": {
+                "Ref": "PrimaryReplicaNode0NodeIAMProfile"
+            },
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "PrimaryReplicaNode0"
+                },
+                {
+                    "Key": "ClusterReplicaSetCount",
+                    "Value": {
+                        "Ref": "ClusterReplicaSetCount"
+                    }
+                },
+                {
+                    "Key": "NodeReplicaSetIndex",
+                    "Value": "0"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
+                }
+
+            ],
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvdg",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "250"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdh",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "200"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdf",
+                    "Ebs": {
+                        "VolumeSize": {
+                            "Ref": "VolumeSize"
+                        },
+                        "VolumeType": "io1",
+                        "Iops": {
+                            "Ref": "Iops"
+                        },
+                        "DeleteOnTermination": "true"
+                    }
+                }
+            ],
+
+            "InstanceType": {
+                "Ref": "NodeInstanceType"
+            }
+        },
+        "DependsOn": "PrivateSubnet"
+    },
+
+    "SecondaryReplicaNode0NodeInterface": {
+        "Type": "AWS::EC2::NetworkInterface",
+        "Properties": {
+            "Description": "Network Interface for Mongo Node",
+            "SubnetId": {
+                "Ref": "PrivateSubnet"
+            },
+            "GroupSet": [
+                {
+                    "Ref": "mongoDBSecurityGroup"
+                }
+            ],
+            "SourceDestCheck": "true",
+            "Tags": [
+                {
+                    "Key": "Network",
+                    "Value": "Private"
+                }
+            ]
+        },
+        "Condition": "IfSecondaryReplicaNode0"
+    },
+    "SecondaryReplicaNode0NodeIAMRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "ec2.amazonaws.com"
+                            ]
+                        },
+                        "Action": [
+                            "sts:AssumeRole"
+                        ]
+                    }
+                ]
+            },
+            "Path": "/",
+            "Policies": [
+                {
+                    "PolicyName": "Backup",
+                    "PolicyDocument": {
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:*",
+                                    "ec2:Describe*",
+                                    "ec2:AttachNetworkInterface",
+                                    "ec2:AttachVolume",
+                                    "ec2:CreateTags",
+                                    "ec2:CreateVolume",
+                                    "ec2:RunInstances",
+                                    "ec2:StartInstances",
+                                    "ec2:DeleteVolume",
+                                    "ec2:CreateSecurityGroup",
+                                    "ec2:CreateSnapshot"
+                                ],
+                                "Resource": "*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "dynamodb:*",
+                                    "dynamodb:Scan",
+                                    "dynamodb:Query",
+                                    "dynamodb:GetItem",
+                                    "dynamodb:BatchGetItem",
+                                    "dynamodb:UpdateTable"
+                                ],
+                                "Resource": [
+                                    "*"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "Condition": "IfSecondaryReplicaNode0"
+    },
+    "SecondaryReplicaNode0NodeIAMProfile": {
+        "Type": "AWS::IAM::InstanceProfile",
+        "Properties": {
+            "Path": "/",
+            "Roles": [
+                {
+                    "Ref": "SecondaryReplicaNode0NodeIAMRole"
+                }
+            ]
+        },
+        "Condition": "IfSecondaryReplicaNode0"
+    },
+
+    "SecondaryReplicaNode0NodeInstanceGP2": {
+        "Type": "AWS::EC2::Instance",
+        "Condition": "UseGP2AndIfSecondaryReplicaNode0",
+        "Metadata": {
+            "HostRole": "MongoDB Node"
+        },
+        "Properties": {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": {
+                        "Ref": "SecondaryReplicaNode0NodeInterface"
+                    },
+                    "DeviceIndex": "0"
+                }
+            ],
+            "KeyName": {
+                "Ref": "KeyName"
+            },
+            "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+            "IamInstanceProfile": {
+                "Ref": "SecondaryReplicaNode0NodeIAMProfile"
+            },
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "SecondaryReplicaNode0"
+                },
+                {
+                    "Key": "ClusterReplicaSetCount",
+                    "Value": {
+                        "Ref": "ClusterReplicaSetCount"
+                    }
+                },
+                {
+                    "Key": "NodeReplicaSetIndex",
+                    "Value": "1"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
+                }
+				
+            ],
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvdg",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "250"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdh",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "200"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdf",
+                    "Ebs": {
+                        "VolumeSize": {
+                            "Ref": "VolumeSize"
+                        },
+                        "VolumeType": "gp2",
+                        "DeleteOnTermination": "true"
+                    }
+                }
+            ],
+            "InstanceType": {
+                "Ref": "NodeInstanceType"
+            }
+        }
+    },
+    "SecondaryReplicaNode0NodeInstanceIO1": {
+        "Type": "AWS::EC2::Instance",
+        "Condition": "UsePIopsAndIfSecondaryReplicaNode0",
+        "Metadata": {
+            "HostRole": "MongoDB Node"
+        },
+        "Properties": {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": {
+                        "Ref": "SecondaryReplicaNode0NodeInterface"
+                    },
+                    "DeviceIndex": "0"
+                }
+            ],
+            "KeyName": {
+                "Ref": "KeyName"
+            },
+            "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+            "IamInstanceProfile": {
+                "Ref": "SecondaryReplicaNode0NodeIAMProfile"
+            },
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "SecondaryReplicaNode0"
+                },
+                {
+                    "Key": "ClusterReplicaSetCount",
+                    "Value": {
+                        "Ref": "ClusterReplicaSetCount"
+                    }
+                },
+                {
+                    "Key": "NodeReplicaSetIndex",
+                    "Value": "1"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
+                }
+				
+            ],
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvdg",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "250"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdh",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "200"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdf",
+                    "Ebs": {
+                        "VolumeSize": {
+                            "Ref": "VolumeSize"
+                        },
+                        "VolumeType": "io1",
+                        "Iops": {
+                            "Ref": "Iops"
+                        },
+                        "DeleteOnTermination": "true"
+                    }
+                }
+            ],
+
+            "InstanceType": {
+                "Ref": "NodeInstanceType"
+            }
+        }
+    },
+    "SecondaryReplicaNode1NodeInterface": {
+        "Type": "AWS::EC2::NetworkInterface",
+        "Properties": {
+            "Description": "Network Interface for Mongo Node",
+            "SubnetId": {
+                "Ref": "PrivateSubnet"
+            },
+            "GroupSet": [
+                {
+                    "Ref": "mongoDBSecurityGroup"
+                }
+            ],
+            "SourceDestCheck": "true",
+            "Tags": [
+                {
+                    "Key": "Network",
+                    "Value": "Private"
+                }
+            ]
+        },
+        "Condition": "IfSecondaryReplicaNode1"
+    },
+
+    "SecondaryReplicaNode1NodeIAMRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "ec2.amazonaws.com"
+                            ]
+                        },
+                        "Action": [
+                            "sts:AssumeRole"
+                        ]
+                    }
+                ]
+            },
+            "Path": "/",
+            "Policies": [
+                {
+                    "PolicyName": "Backup",
+                    "PolicyDocument": {
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:*",
+                                    "ec2:Describe*",
+                                    "ec2:AttachNetworkInterface",
+                                    "ec2:AttachVolume",
+                                    "ec2:CreateTags",
+                                    "ec2:CreateVolume",
+                                    "ec2:RunInstances",
+                                    "ec2:StartInstances",
+                                    "ec2:DeleteVolume",
+                                    "ec2:CreateSecurityGroup",
+                                    "ec2:CreateSnapshot"
+                                ],
+                                "Resource": "*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "dynamodb:*",
+                                    "dynamodb:Scan",
+                                    "dynamodb:Query",
+                                    "dynamodb:GetItem",
+                                    "dynamodb:BatchGetItem",
+                                    "dynamodb:UpdateTable"
+                                ],
+                                "Resource": [
+                                    "*"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "Condition": "IfSecondaryReplicaNode1"
+    },
+    "SecondaryReplicaNode1NodeIAMProfile": {
+        "Type": "AWS::IAM::InstanceProfile",
+        "Properties": {
+            "Path": "/",
+            "Roles": [
+                {
+                    "Ref": "SecondaryReplicaNode1NodeIAMRole"
+                }
+            ]
+        },
+        "Condition": "IfSecondaryReplicaNode1"
+    },
+
+    "SecondaryReplicaNode1NodeInstanceGP2": {
+        "Type": "AWS::EC2::Instance",
+        "Condition": "UseGP2AndIfSecondaryReplicaNode1",
+        "Metadata": {
+            "HostRole": "MongoDB Node"
+        },
+        "Properties": {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": {
+                        "Ref": "SecondaryReplicaNode1NodeInterface"
+                    },
+                    "DeviceIndex": "0"
+                }
+            ],
+            "KeyName": {
+                "Ref": "KeyName"
+            },
+            "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+            "IamInstanceProfile": {
+                "Ref": "SecondaryReplicaNode1NodeIAMProfile"
+            },
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "SecondaryReplicaNode1"
+                },
+                {
+                    "Key": "ClusterReplicaSetCount",
+                    "Value": {
+                        "Ref": "ClusterReplicaSetCount"
+                    }
+                },
+                {
+                    "Key": "NodeReplicaSetIndex",
+                    "Value": "2"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
+                }
+				
+            ],
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvdg",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "250"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdh",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "200"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdf",
+                    "Ebs": {
+                        "VolumeSize": {
+                            "Ref": "VolumeSize"
+                        },
+                        "VolumeType": "gp2",
+                        "DeleteOnTermination": "true"
+                    }
+                }
+            ],
+            "InstanceType": {
+                "Ref": "NodeInstanceType"
+            }
+        }
+    },
+    "SecondaryReplicaNode1NodeInstanceIO1": {
+        "Type": "AWS::EC2::Instance",
+        "Condition": "UsePIopsAndIfSecondaryReplicaNode1",
+        "Metadata": {
+            "HostRole": "MongoDB Node"
+        },
+        "Properties": {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": {
+                        "Ref": "SecondaryReplicaNode1NodeInterface"
+                    },
+                    "DeviceIndex": "0"
+                }
+            ],
+            "KeyName": {
+                "Ref": "KeyName"
+            },
+            "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+            "IamInstanceProfile": {
+                "Ref": "SecondaryReplicaNode1NodeIAMProfile"
+            },
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "SecondaryReplicaNode1"
+                },
+                {
+                    "Key": "ClusterReplicaSetCount",
+                    "Value": {
+                        "Ref": "ClusterReplicaSetCount"
+                    }
+                },
+                {
+                    "Key": "NodeReplicaSetIndex",
+                    "Value": "2"
+                },
+                {
+                    "Key": "Type",
+                    "Value": "MongoDBReplica"
+                }
+				
+            ],
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvdg",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "250"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdh",
+                    "Ebs": {
+                        "VolumeType": "io1",
+                        "DeleteOnTermination": "true",
+                        "VolumeSize": "25",
+                        "Iops": "200"
+                    }
+                },
+                {
+                    "DeviceName": "/dev/xvdf",
+                    "Ebs": {
+                        "VolumeSize": {
+                            "Ref": "VolumeSize"
+                        },
+                        "VolumeType": "io1",
+                        "Iops": {
+                            "Ref": "Iops"
+                        },
+                        "DeleteOnTermination": "true"
+                    }
+                }
+            ],
+            "InstanceType": {
+                "Ref": "NodeInstanceType"
+            }
+        }
+    },
+
+
+    "WebServerInstance": {
+      "Type": "AWS::EC2::Instance",
+	   "Metadata" : {
+        "Comment1" : "Configure the bootstrap helpers to install the Apache Web Server and PHP",        
+		"AWS::CloudFormation::Init" : {
+			"configSets" : {
+				"Install" : [ "Install" ]
+			},
+			"Install": {
+				"packages": {
+					"yum": {
+						"httpd": []
+					}					
+				},
+				"files":  {
+					"/var/www/html/index.php": {
+						"content":  { "Fn::Join" : ["", [
+							"<html> \n",
+								"<head> \n",
+								"<title> MongoDB ClodFormation Template< /title> \n",
+								"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n",
+								"</head>\n",
+								"<body>\n",
+								"<h1> Welcome to the mongoDB CloudFormation Template which creates a replica Set within a VPC</h1>\n",
+								"</body> \n",
+								"</html>\n"
+								]]},
+								"mode" : "00600",
+								"owner" : "apache",
+								"group":  "apache"															 
+					},
+					"services": {
+						"sysvinit": {
+							"httpd": {"enabled": "true", "ensureRunning": "true"}
+						}
+					}
+				}
+	  }
+	  }
+	  }	  
+	  ,
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+        "InstanceType": {
+                "Ref": "NodeInstanceType"
+            },
+        "KeyName": "mykey",
+        "Monitoring": "false",
+		"UserData": {
+		"Fn::Base64": {
+			"Fn::Join": ["", [
+				  "#!/bin/bash -xe\n",
+				  "date > /home/ec2-user/starttime\n",
+				  "yum update -y aws-cfn-bootstrap\n",
+				  "## Initialize CloudFormation bits\n",
+				  "/opt/aws/bin/cfn-init -v -s ", { "Ref" : "AWS::StackName" }, " -r FormEngine",
+				  "         --resource WebServerInstance ",
+				  "         --configsets Install ",
+				  "         --region ", { "Ref" : "AWS::Region" }, " > /tmp/cfn-init.log 2>&1 \n"
+				  
+				]]}},
+
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "WebServer"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+			"AssociatePublicIpAddress": "true",
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "APPPublicSubnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "sgwebServerSG"
+              }
+            ]
+          }
+        ]	
+	
+	}
+    
+	}
+	,
+	
+	 "deployServerInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": "ami-d0ecfebc",
+        "InstanceType": {
+                "Ref": "NodeInstanceType"
+            },
+        "KeyName": "mykey",
+        "Monitoring": "false",		
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "deployServer"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+			"AssociatePublicIpAddress": "true",
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "APPPublicSubnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "sgwebServerSG"
+              }
+            ]
+          }
+        ]	
+	
+	}
+    
+	}
+	,
+
+
+    "bastionServerInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId":  {
+                "Fn::FindInMap": [
+                    "AMI",
+                    {
+                        "Ref": "AWS::Region"
+                    },
+                    {
+                        "Fn::FindInMap": [
+                            "InstanceTypeArch",
+                            {
+                                "Ref": "NodeInstanceType"
+                            },
+                            "Arch"
+                        ]
+                    }
+                ]
+            },
+        "InstanceType": {
+                "Ref": "NodeInstanceType"
+            },
+        "KeyName": "mykey",
+        "Monitoring": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "bastionServer"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+			"AssociatePublicIpAddress": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "PublicAdminSubnet"
+            },           
+            "GroupSet": [
+              {
+                "Ref": "sgbastionServerSG"
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "sgbastionServerSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable external access to the mongoDB device",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [                
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": {
+                            "Ref": "RemoteAccessCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "icmp",
+                        "FromPort": "8",
+                        "ToPort": "-1",
+                        "CidrIp": {
+                            "Ref": "RemoteAccessCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "RemoteAccessCIDR"
+                        }
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "PrivateReplicaSubnet"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "27017",
+                        "ToPort": "27019",
+                        "CidrIp": {
+                            "Ref": "PrivateReplicaSubnet"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "PrivateSubnetAdmin"
+                        }
+                    },
+                    {
+                        "IpProtocol": "icmp",
+                        "FromPort": "8",
+                        "ToPort": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+		
+    "sgwebServerSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "security Group for WebServer",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+	
+    "sgdefault": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "default VPC security group",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+
+	
+    "ingress1": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgwebServerSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress2": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgwebServerSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": {
+			"Ref": "RemoteAccessCIDR"
+			}
+      }
+    },
+    "ingress3": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgwebServerSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "443",
+        "ToPort": "443",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+	"ingressJNK": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgwebServerSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "8080",
+        "ToPort": "8080",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    
+    "ingress8": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": {
+          "Ref": "sgdefault"
+        },
+        "SourceSecurityGroupOwnerId": "092087366021"
+      }
+    },
+
+    "ingress11": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": {
+          "Ref": "sgdefault"
+        },
+        "SourceSecurityGroupOwnerId": "092087366021"
+      }
+    },
+    "egress1": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgwebServerSG"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress3": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress6": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    }
+    }  
+ 
+}
