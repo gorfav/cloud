@@ -14,7 +14,7 @@
   - name: Send Email with Details
     local_action: mail
                   subject="Ansible MongoDB Creation Report"
-                  from=ansible@poc.nl
+                  from=ansible@t-mobile.nl
                   to=gordon.fava@t-mobile.nl
                   body="{{ lookup('file', '/tmp/email.txt') }}"
     changed_when: result|success
