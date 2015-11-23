@@ -2462,6 +2462,13 @@
         "CidrIp": "0.0.0.0/0"
       }
     }
-    }  
+    } ,
+    
+"Outputs" : {
+  "DeploymentServer" : {
+    "Description": "The Host Name of the deployment server",  
+    "Value" : { "Fn::GetAtt" : [ "deployServerInstance", "PublicDnsName" ]}
+  }
+}
  
 }
