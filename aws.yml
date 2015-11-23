@@ -79,3 +79,11 @@
     become_method: sudo
     become_user: mongod
     shell: mongoimport --db test --collection restaurants --drop --file /tmp/primer-dataset.json
+	
+- hosts: localhost
+  gather_facts: no
+
+  tasks:
+  roles:
+  - { role: aws }
+	

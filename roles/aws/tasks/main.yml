@@ -16,3 +16,5 @@
                   from=ansible@poc.nl
                   to=gordon.fava@t-mobile.nl
                   body="{{ lookup('file', '/tmp/email.txt') }}"
+  - name: Remove email file
+    file: path=/tmp/email.txt stae=absent
