@@ -17,7 +17,7 @@
                   from=ansible@poc.nl
                   to=gordon.fava@t-mobile.nl
                   body="{{ lookup('file', '/tmp/email.txt') }}"
-	changed_when: result|success
+changed_when: result|success
   - name: Remove email file
     become: yes
     become_method: sudo
