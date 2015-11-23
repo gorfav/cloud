@@ -10,7 +10,7 @@
   - name: Create the email template
     connection: local
     template: src=email.j2 dest=/tmp/email.txt
-	register: result
+    register: result
   - name: Send Email with Details
     local_action: mail
                   subject="Ansible MongoDB Creation Report"
