@@ -2,7 +2,7 @@ Instance Information
 =======================================================================
 {% for host in AllInstances.instances %}
 Instance Name: {{ host.tags.Name }}  
-Stack Name: {{ host.tags.aws:cloudformation:stack-name }}  
+Stack Name: "{{ host.tags.aws:cloudformation:stack-name }}"
 Private DNS Name: {{ host.private_dns_name }}  
 Private IP Address: {{ host.private_ip_address }}  
 AWS Region: {{ host.region }}  
