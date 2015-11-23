@@ -1,0 +1,12 @@
+  - name: Get Info based On Tags
+    connection: local
+    ec2_remote_facts:
+     region: eu-central-1
+     filters:
+       "tag:aws:cloudformation:stack-name": "{{stackname}}"
+    register: ec2
+  - debug: var=ec2
+
+  - name: Create the email template  
+    connection: local
+    template: src=email.j2 dest=/etc/hosts
