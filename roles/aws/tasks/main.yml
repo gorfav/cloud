@@ -4,8 +4,8 @@
      region: eu-central-1
      filters:
        "tag:aws:cloudformation:stack-name": "{{stackname}}"
-    register: ec2
-  - debug: var=ec2
+    register: AllInstances
+  - debug: var=AllInstances
 
   - name: Create the email template  
     connection: local
