@@ -4,6 +4,16 @@
 mongodb_datadir_prefix: /data/
 mongod_port: 27017
 stackname: "{{ lookup('env','STACK_NAME') }}"
+template: "{{ lookup('env','CLOUDFORMATION_TEMPLATE') }}"
+region: "{{ lookup('env','REGION') }}"
+zone: "{{ lookup('env','AVAILABILITY_ZONE') }}"
+replica_set: "{{ lookup('env','REPLICA_SET') }}"
+iops: "{{ lookup('env','IOPS') }}"
+nat_instance_type: "{{ lookup('env','NAT_INSTANCE_TYPE') }}"
+node_instance_type: "{{ lookup('env','NODE_INSTANCE_TYPE') }}"
+volume_type: "{{ lookup('env','VOLUME_TYPE') }}"
+volume_size: "{{ lookup('env','VOLUME_SIZE') }}"
+corpCidr: "{{ lookup('env','CORPORATE_CIDR') }}"
 
 
 # The interface where the mongodb process should listen on.

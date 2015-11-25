@@ -1,0 +1,107 @@
+---
+# This Playbook is to test the cloudformation ansible plugin
+
+- hosts: localhost
+  gather_facts: no
+  sudo: yes
+  connection: local
+
+  tasks:
+  
+  - name: launch ansible MongoDB cloudformation 
+    cloudformation:
+    stack_name: "{{stackname}}"
+    state: "present"
+    region: "{{region}}"
+    disable_rollback: false
+    template: "files/{{template}}"
+    template_parameters:
+	 AvailabilityZone0: "{{zone}}"
+     ClusterReplicaSetCount: "{{replica_set}}"
+     RemoteAccessCIDR: "{{corpCidr}}"
+     VolumeSize: "{{volume_size}}"
+     VolumeType: "{{volume_type}}"
+     Iops: "{{iops}}"
+     NATInstanceType: "{{nat_instance_type}}"
+	 NodeInstanceType: "{{node_instance_type}}"
+    tags:
+      Stack: "ansible-{{stackname}}"
+	when: createStack="Yes"
+	  
+  - name: Get VPC
+    ec2_vpc_subnet_facts:
+     region: "{{region}}"
+     filters:
+        "tag:aws:cloudformation:stack-name": "{{stackname}}"
+    register: curvpc 
+      
+  - name: Get Info based On Tags
+    ec2_remote_facts:
+     region: "{{region}}" 
+     filters:
+       vpc-id: "{{curvpc.subnets[0].vpc_id}}"
+       "tag:Type": MongoDBReplica
+    register: ec2
+
+  - name: Add all instance public IPs to host group
+    add_host: hostname={{ item.private_ip_address}}
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              groups=mongo_servers
+              tag={{ec2}}
+    with_items: ec2.instances
+
+  - name: List hosts
+    command: echo {{item.private_dns_name}}
+    with_items: ec2.instances
+
+  - name: Change private key permission
+    file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
+
+- hosts: mongo_servers
+  gather_facts: yes
+  remote_user: ec2-user
+
+  pre_tasks:
+  - name: Install ansible key
+    authorized_key: user=ec2-user
+                    key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
+
+  - name: List Object
+    command: echo "{{tag}}"
+  - debug: var=tag
+
+
+  roles:
+  - { role: common, mongoDBInstances: "{{tag.instances}}" }
+  
+  post_tasks:
+  
+  - name: Remove bind ip
+    become: yes
+    become_method: sudo
+    replace: dest=/etc/mongod.conf regexp="^bind_ip=127.0.0.1" replace="#bind_ip=127.0.0.1"
+  
+  - name: Start Mongodb
+    become: yes
+    become_method: sudo
+    service: name=mongod state=restarted
+    
+  - name: Get MongoDB example
+    become: yes
+    become_method: sudo
+    become_user: mongod
+    get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
+         dest="/tmp/primer-dataset.json"
+         
+  
+  - name: Import dataset into mongodb
+    become: yes
+    become_method: sudo
+    become_user: mongod
+    shell: mongoimport --db test --collection restaurants --drop --file /tmp/primer-dataset.json
+- hosts: localhost
+  gather_facts: no
+
+  tasks:
+  roles:
+  - { role: aws }	
