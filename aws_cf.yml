@@ -8,6 +8,8 @@
 
   tasks:
 
+  - name: update CF Template
+    command: aws s3 cp files/cloudtemplate_vpc.txt s3://cftemplates-gf/cloudtemplate_vpc.txt
   - name: launch ansible MongoDB cloudformation
     cloudformation:
      stack_name: "{{stackname}}"

@@ -1084,6 +1084,21 @@
 			  }
 		},
 
+	   	 "InboundRuleforDeployWeb": {
+			  "Type": "AWS::EC2::SecurityGroupIngress",
+			  "Properties":{
+				"IpProtocol": "tcp",
+				"FromPort": "22",
+				"ToPort": "22",
+				"SourceSecurityGroupId": "sg-f56b129c",
+				"GroupId": {
+				  "Fn::GetAtt": [
+					"mongoDBSecurityGroup",
+					"GroupId"
+				  ]
+				}
+			  }
+		},
   	 "InboundRuleforDeploy": {
 			  "Type": "AWS::EC2::SecurityGroupIngress",
 			  "Properties":{
