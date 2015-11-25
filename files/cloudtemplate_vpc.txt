@@ -704,7 +704,14 @@
         ]
       }
     },
-	
+
+	"NATEIP": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        	
     "NATInterface": {
             "Type": "AWS::EC2::NetworkInterface",			
             "Properties": {
@@ -724,6 +731,20 @@
                         "Value": "Public"
                     }
                 ]
+            }
+        },
+    "AssociateInterfaceNAT": {
+            "Type": "AWS::EC2::EIPAssociation",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NATEIP",
+                        "AllocationId"
+                    ]
+                },
+                "NetworkInterfaceId": {
+                    "Ref": "NATInterface"
+                }
             }
         },
     "NATSecurityGroup": {
