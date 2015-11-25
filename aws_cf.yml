@@ -7,14 +7,14 @@
   connection: local
 
   tasks:
-  
+
   - name: launch ansible MongoDB cloudformation
     cloudformation:
      stack_name: "{{stackname}}"
      state: "present"
      region: "{{region}}"
      disable_rollback: false
-     template: "files/{{template}}"
+     template_url: "https://s3.eu-central-1.amazonaws.com/cftemplates-gf/cloudtemplate_vpc.txt"
      template_parameters:
       AvailabilityZone0: "{{zone}}"
       ClusterReplicaSetCount: "{{replica_set}}"
@@ -26,17 +26,17 @@
       NodeInstanceType: "{{node_instance_type}}"
      tags:
       Stack: "ansible-{{stackname}}"
-    when: createStack == "Yes"	
+    when: createStack == "Yes"
   - name: Get VPC
     ec2_vpc_subnet_facts:
      region: "{{region}}"
      filters:
         "tag:aws:cloudformation:stack-name": "{{stackname}}"
-    register: curvpc 
-      
+    register: curvpc
+
   - name: Get Info based On Tags
     ec2_remote_facts:
-     region: "{{region}}" 
+     region: "{{region}}"
      filters:
        vpc-id: "{{curvpc.subnets[0].vpc_id}}"
        "tag:Type": MongoDBReplica
@@ -49,12 +49,13 @@
               tag={{ec2}}
     with_items: ec2.instances
 
-  - name: List hosts
-    command: echo {{item.private_dns_name}}
-    with_items: ec2.instances
-
   - name: Change private key permission
     file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
+
+  - name: Wait for instance to start up and be running
+    wait_for: host={{item.private_ip_address}} port=22 delay=60 timeout=320 state=started
+    with_items: ec2.instances
+
 
 - hosts: mongo_servers
   gather_facts: yes
@@ -72,27 +73,27 @@
 
   roles:
   - { role: common, mongoDBInstances: "{{tag.instances}}" }
-  
+
   post_tasks:
-  
+
   - name: Remove bind ip
     become: yes
     become_method: sudo
     replace: dest=/etc/mongod.conf regexp="^bind_ip=127.0.0.1" replace="#bind_ip=127.0.0.1"
-  
+
   - name: Start Mongodb
     become: yes
     become_method: sudo
     service: name=mongod state=restarted
-    
+
   - name: Get MongoDB example
     become: yes
     become_method: sudo
     become_user: mongod
     get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
          dest="/tmp/primer-dataset.json"
-         
-  
+
+
   - name: Import dataset into mongodb
     become: yes
     become_method: sudo
@@ -103,4 +104,4 @@
 
   tasks:
   roles:
-  - { role: aws }	
+  - { role: aws }

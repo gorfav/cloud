@@ -39,14 +39,14 @@
       "PublicSubnet": {
           "Description": "CIDR Block for the Public Subnet located in the new VPC.",
           "Type": "String",
-          "Default": "172.0.1.0/24",
+          "Default": "172.0.10.0/24",
           "AllowedPattern": "[a-zA-Z0-9]+\\..+"
         },
 		
       "PublicSubnetAdmin": {
           "Description": "CIDR Block for the ADMIN Public Subnet located in the new VPC.",
           "Type": "String",
-          "Default": "172.0.2.0/24",
+          "Default": "172.0.11.0/24",
           "AllowedPattern": "[a-zA-Z0-9]+\\..+"
         },
 		
@@ -706,8 +706,7 @@
     },
 	
     "NATInterface": {
-            "Type": "AWS::EC2::NetworkInterface",
-			"AssociatePublicIpAddress": "true",
+            "Type": "AWS::EC2::NetworkInterface",			
             "Properties": {
                 "SubnetId": {
                     "Ref": "APPPublicSubnet"
@@ -2366,6 +2365,13 @@
         "CidrIp": "0.0.0.0/0"
       }
     }
-    }  
+    } ,
+"Outputs" : {
+  "DeploymentServer" : {
+    "Description": "The Host Name of the deployment server",  
+    "Value" : { "Fn::GetAtt" : [ "deployServerInstance", "PublicDnsName" ]}
+  }
+}
+
  
 }
