@@ -8,26 +8,25 @@
 
   tasks:
   
-  - name: launch ansible MongoDB cloudformation 
+  - name: launch ansible MongoDB cloudformation
     cloudformation:
-    stack_name: "{{stackname}}"
-    state: "present"
-    region: "{{region}}"
-    disable_rollback: false
-    template: "files/{{template}}"
-    template_parameters:
-	 AvailabilityZone0: "{{zone}}"
-     ClusterReplicaSetCount: "{{replica_set}}"
-     RemoteAccessCIDR: "{{corpCidr}}"
-     VolumeSize: "{{volume_size}}"
-     VolumeType: "{{volume_type}}"
-     Iops: "{{iops}}"
-     NATInstanceType: "{{nat_instance_type}}"
-	 NodeInstanceType: "{{node_instance_type}}"
-    tags:
+     stack_name: "{{stackname}}"
+     state: "present"
+     region: "{{region}}"
+     disable_rollback: false
+     template: "files/{{template}}"
+     template_parameters:
+      AvailabilityZone0: "{{zone}}"
+      ClusterReplicaSetCount: "{{replica_set}}"
+      RemoteAccessCIDR: "{{corpCidr}}"
+      VolumeSize: "{{volume_size}}"
+      VolumeType: "{{volume_type}}"
+      Iops: "{{iops}}"
+      NATInstanceType: "{{nat_instance_type}}"
+      NodeInstanceType: "{{node_instance_type}}"
+     tags:
       Stack: "ansible-{{stackname}}"
-	when: createStack="Yes"
-	  
+    when: createStack == "Yes"	
   - name: Get VPC
     ec2_vpc_subnet_facts:
      region: "{{region}}"
