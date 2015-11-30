@@ -7,23 +7,29 @@
   connection: local
 
   tasks:
-  - name: List Instances
-    command: echo {{item}}
-	with: "{{instances|basename}}" 
-  
-#  - name: Terminate Stack
-#    cloudformation:
-#	  stack_name: "{{stackname}}"
-#	  state: "absent"
-#    when: action=="Destroy Stack"  
-  
-#  - name: Stop Instances
-#    ec2: 
-#	 instance_ids: "{{item}}"	 
-#	 state: stopped
-#	with: "{{instances}}"
-#    when: action="Stop Instances" 
-	
-	
-	
-#	region: "{{ region }}" 
+
+  - name: Stop Instances
+    ec2:
+     instance_ids: "{{item|regex_replace('^.*?-[^abc]')}}"
+     state: stopped
+     region: "{{region}}"
+     wait: yes
+    with_items: "{{instances.split(',')}}"
+    when: action == "Stop Instances"
+
+  - name: Start Instances
+    ec2:
+     instance_ids: "{{item|regex_replace('^.*?-[^abc]')}}"
+     state: running
+     region: "{{region}}"
+     wait: yes
+    with_items: "{{instances.split(',')}}"
+    when: action == "Start Instances"
+
+  - name: Terminate Stack
+    cloudformation:
+     stack_name: "{{stackname}}"
+     state: absent
+     wait: yes
+     region:  "{{region}}"
+    when: action=="Destroy Stack"
