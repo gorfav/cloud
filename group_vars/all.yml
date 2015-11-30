@@ -15,7 +15,8 @@ node_instance_type: "{{ lookup('env','NODE_INSTANCE_TYPE') }}"
 volume_type: "{{ lookup('env','VOLUME_TYPE') }}"
 volume_size: "{{ lookup('env','VOLUME_SIZE') }}"
 corpCidr: "{{ lookup('env','CORPORATE_CIDR') }}"
-
+instances: "{{ lookup('env','INSTANCE_LIST') }}"
+action: "{{ lookup('env','ACTION') }}"
 
 # The interface where the mongodb process should listen on.
 # Defaults to the first interface. Change this to:

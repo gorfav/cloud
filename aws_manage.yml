@@ -1,0 +1,29 @@
+---
+# This Playbook is to test the cloudformation ansible plugin
+
+- hosts: localhost
+  gather_facts: no
+  sudo: yes
+  connection: local
+
+  tasks:
+  - name: List Instances
+    command: echo {{item}}
+	with: "{{instances|basename}}" 
+  
+#  - name: Terminate Stack
+#    cloudformation:
+#	  stack_name: "{{stackname}}"
+#	  state: "absent"
+#    when: action=="Destroy Stack"  
+  
+#  - name: Stop Instances
+#    ec2: 
+#	 instance_ids: "{{item}}"	 
+#	 state: stopped
+#	with: "{{instances}}"
+#    when: action="Stop Instances" 
+	
+	
+	
+#	region: "{{ region }}" 
