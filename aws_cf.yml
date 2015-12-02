@@ -46,14 +46,23 @@
     register: ec2
 
   - name: Add all instance public IPs to host group
+    add_host: hostname={{ item.private_ip_address}}
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"			  
+              groups=mongo_servers
+              tag={{ec2}}
+    with_items: ec2.instances
+	when: "{{replica_set}} == 1"
+	
+	- name: Add all instance public IPs to host group
     add_host: hostname={{ item.0.private_ip_address}}
-              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
-			  mongod_port={{mongod_port+item.1}}
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"			  
+			  mongo_port="{{mongo_port + item.1 }}"
               groups=mongo_servers
               tag={{ec2}}
     with_together: 
-            - ec2.instances
-			- [0,1,2]
+		- ec2.instances
+		- [0,1,2]
+	when: "{{replica_set}} == 1"
 
   - name: Add all instance public IPs to host group
     add_host: hostname={{ item.private_ip_address}}
@@ -61,6 +70,7 @@
               groups=replication_servers
               tag={{ec2}}
     with_items: ec2.instances
+	when: "{{replica_set}} == 3"
 	
   - name: Change private key permission
     file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
