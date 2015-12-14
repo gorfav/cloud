@@ -26,5 +26,20 @@
               groups=mongo_servers
               ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
               mongod_port={{item.tags.mongodbPort}}
+              mongod_set={{item.tags.mongodbSet}}
+              mongod_setnum={{item.tags.mongodbNode}}
     with_items: ec_inst.instances    
     
+    
+- hosts: mongo_servers    
+  gather_facts: yes
+  remote_user: ec2-user
+  
+  pre_tasks:
+  - name: Install ansible key
+    authorized_key: user=ec2-user
+                    key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
+
+  roles:
+  - { role: mongodb_common }
+  
