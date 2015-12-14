@@ -16,7 +16,7 @@
 
 - name: Mount the data FS
   sudo: yes
-  mount: name=/data
+  mount: name=/data source=/dev/xvdf state=present fstype=ext4
 
 - name: Create the log directory for the namenode metadata
   sudo: yes
@@ -32,7 +32,7 @@
 
 - name: Mount the log FS
   sudo: yes
-  mount: name=/log
+  mount: name=/log source=/dev/xvdg state=present fstype=ext4
 
 - name: Create the journal directory for the namenode metadata
   sudo: yes
@@ -48,7 +48,7 @@
 
 - name: Mount the journal FS
   sudo: yes
-  mount: name=/journal
+  mount: name=/journal source=/dev/xvdh state=present fstype=ext4
 
 - name: Create a symlink from /data/jorunal to journal FS
   sudo: yes
