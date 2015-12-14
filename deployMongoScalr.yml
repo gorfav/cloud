@@ -1,0 +1,31 @@
+---
+- hosts: localhost
+  gather_facts: no
+  sudo: yes
+  connection: local
+  vars:
+   volume_type: "{{ lookup('env','MONGODB_VOLUME_TYPE') }}"
+   createVolume: "{{ lookup('env','MONGODB_CREATE_VOLUME') }}"
+
+  tasks:
+#Get the List of EC2 Instances which are provisioned for this farm
+  - name: Get Info based On Tags
+    ec2_remote_facts:
+     region: "{{ lookup('env','AWS_DEFAULT_REGION') }}"
+     filters:
+       "tag:farm-name": "{{ lookup('env','FARM_NAME') }}"
+       "tag:Type": MongoDBReplica
+    register: ec_inst
+
+##Create VOlume if Requested
+  - include: createAWSVolumes.yml vol_type="{{volume_type}}" ec2="{{ec_inst}}"
+    when: createVolume == "Yes"
+    
+  - name: Add all instance public IPs to host group for Replica Set
+    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
+              groups=mongo_servers
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              mongod_port={{item.tags.mongodb-port}}
+    with_items: ec_inst.instances
+    when: "{{replica_set}} == 3"
+    

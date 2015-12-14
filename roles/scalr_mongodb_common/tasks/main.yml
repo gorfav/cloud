@@ -1,0 +1,107 @@
+- name: Create the hosts file for all machines
+  sudo: yes
+  template: src=hosts.j2 dest=/etc/hosts
+  
+- name: Create the data directory for the namenode metadata
+  sudo: yes
+  file: path=/data owner=mongod group=mongod state=directory
+
+- name: Create the data directory FS 
+  sudo: yes
+  filesystem: fstype=ext4 dev=/dev/xvdf opts="--setra 32"
+
+- name: Append Entry in fstab
+  sudo: yes
+  lineinfile: dest=/etc/fstab line="/dev/xvdf /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
+
+- name: Mount the data FS
+  sudo: yes
+  mount: name=/data
+
+- name: Create the log directory for the namenode metadata
+  sudo: yes
+  file: path=/log owner=mongod group=mongod state=directory
+
+- name: Create the log directory FS 
+  sudo: yes
+  filesystem: fstype=ext4 dev=/dev/xvdg opts="--setra 32"
+
+- name: Append Entry in fstab
+  sudo: yes
+  lineinfile: dest=/etc/fstab line="/dev/xvdg /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
+
+- name: Mount the log FS
+  sudo: yes
+  mount: name=/log
+
+- name: Create the journal directory for the namenode metadata
+  sudo: yes
+  file: path=/journal owner=mongod group=mongod state=directory
+  
+- name: Create the data directory FS 
+  sudo: yes
+  filesystem: fstype=ext4 dev=/dev/xvdh opts="--setra 32"
+  
+- name: Append Entry in fstab
+  sudo: yes
+  lineinfile: dest=/etc/fstab line="/dev/xvdh /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
+
+- name: Mount the journal FS
+  sudo: yes
+  mount: name=/journal
+
+- name: Create a symlink from /data/jorunal to journal FS
+  sudo: yes
+  mount: src=/data/journal dest=/journal owner=mongod group=mongod state=link
+  
+- name: Change File Limits
+  sudo: yes
+  lineinfile: 
+    dest: /etc/security/limits.conf
+    line: "{{item.line}}"
+    create: yes 
+    state: present
+  with_items: 
+      - { line: '* soft nofile 64000' }
+      - { line: '* hard nofile 64000' }
+      - { line: '* soft nproc 32000' }
+      - { line: '* hard nproc 32000' }
+
+- name: Change nProc File Limits
+  sudo: yes
+  lineinfile:
+    dest: /etc/security/limits.d/90-nproc.conf
+    line: "{{item.line}}"
+    create: yes 
+    state: present    
+  with_items: 
+      - { line: '* soft nproc 32000' }
+      - { line: '* hard nproc 32000' }
+
+- name: Set readahead blocdev 
+  sudo: yes
+  shell: "blockdev --setra 32 {{item.line}}"    
+  with_items: 
+      - { device: '/dev/xvdf' }
+      - { device: '/dev/xvdg' }
+      - { device: '/dev/xvdh' }
+
+- name: Add readahead blocdev to ebs rules
+  sudo: yes
+  lineinfile:
+    dest: /etc/security/limits.d/90-nproc.conf
+    line: 'ACTION=="add", KERNEL=="{{item.device}}", ATTR{bdi/read_ahead_kb}="16"'
+    create: yes 
+    state: present    
+  with_items: 
+      - { device: '/dev/xvdf' }
+      - { device: '/dev/xvdg' }
+      - { device: '/dev/xvdh' }
+
+- name: Replace keep alive setting to 300 seconds
+  sudo: yes
+  replace:
+      dest: /proc/sys/net/ipv4/tcp_keepalive_time
+      replace: "300"
+      regexp: "*"
+      

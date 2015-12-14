@@ -1,0 +1,75 @@
+---
+  - debug: var=ec2
+
+  - name: Create Data Volume for instances for GP2
+    ec2_vol:
+        instance: "{{item.id}}"
+        name: data_vol_{{item.id}}
+        device_name: /dev/xvdf
+        volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
+        volume_type: gp2
+        region: "{{item.region}}"
+    with_items: ec2.instances
+    when: vol_type == "gp2"
+    
+
+  - name: Create Data Volume for instances for IOPS Provisioned
+    ec2_vol:
+        instance: "{{item.id}}"
+        name: data_vol_{{item.id}}
+        device_name: /dev/xvdf
+        volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
+        volume_type: io1
+        iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"
+        region: "{{item.region}}"
+    with_items: ec2.instances
+    when: vol_type == "gp2"
+    
+
+  - name: Create Log Volume for instances for GP2
+    ec2_vol:
+        instance: "{{item.id}}"
+        name: log_vol_{{item.id}}
+        device_name: /dev/xvdg
+        volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
+        volume_type: gp2
+        region: "{{item.region}}"
+    with_items: ec2.instances
+    when: vol_type == "gp2"
+    
+
+  - name: Create Log Volume for instances for IOPS Provisioned
+    ec2_vol:
+        instance: "{{item.id}}"
+        name: log_vol_{{item.id}}
+        device_name: /dev/xvdg
+        volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
+        volume_type: io1
+        iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"
+        region: "{{item.region}}"
+    with_items: ec2.instances
+    when: vol_type == "io1"
+
+
+  - name: Create Journal Volume for instances for GP2
+    ec2_vol:
+        instance: "{{item.id}}"
+        name: journal_vol_{{item.id}}
+        device_name: /dev/xvdh
+        volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
+        volume_type: gp2
+        region: "{{item.region}}"
+    with_items: ec2.instances
+    when: vol_type == "gp2"
+
+  - name: Create Journal Volume for instances for IOPS Provisioned
+    ec2_vol:
+        instance: "{{item.id}}"
+        name: journal_vol_{{item.id}}
+        device_name: /dev/xvdh
+        volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
+        volume_type: io1
+        iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"
+        region: "{{item.region}}"
+    with_items: ec2.instances
+    when: vol_type == "io1"
