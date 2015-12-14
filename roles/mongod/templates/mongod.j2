@@ -15,7 +15,7 @@ export LC_ALL="C"
 
 # NOTE: if you change any OPTIONS here, you get what you pay for:
 # this script assumes all options are in the config file.
-CONFIGFILE="/etc/mongod-{{ inventory_hostname }}.conf"
+CONFIGFILE="/etc/mongod.conf"
 OPTIONS=" -f $CONFIGFILE"
 SYSCONFIG="/etc/sysconfig/mongod"
 

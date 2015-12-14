@@ -1,0 +1,17 @@
+---
+- hosts: mongo_primary
+  gather_facts: yes
+  remote_user: ec2-user
+
+  tasks:
+  - name: Create root user
+    run_once: yes
+    become: yes
+    become_method: sudo
+    mongodb_user: database=admin
+                  name=root
+                  password=12345
+                  roles='root'
+                  state=present
+                  login_port=27018
+

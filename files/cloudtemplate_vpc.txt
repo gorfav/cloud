@@ -1022,6 +1022,15 @@
                         "Ref": "RemoteAccessCIDR"
                     }
                 },
+
+		{
+                    "IpProtocol": "tcp",
+                    "FromPort": "27017",
+                    "ToPort": "27019",
+                    "CidrIp": {
+                        "Ref": "PrivateReplicaSubnet"
+                    }
+                },      
                 {
                     "IpProtocol": "tcp",
                     "FromPort": "28017",

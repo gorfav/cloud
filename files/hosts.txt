@@ -1,0 +1,5 @@
+[mongo_servers]
+ip-172-0-50-157.eu-central-1.compute.internal mongod_port=27017 ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+ip-172-0-50-174.eu-central-1.compute.internal mongod_port=27018 ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+ip-172-0-50-249.eu-central-1.compute.internal mongod_port=27019 ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+

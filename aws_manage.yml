@@ -28,8 +28,8 @@
 
   - name: Terminate Stack
     cloudformation:
+     template_url: "https:ffff" 
      stack_name: "{{stackname}}"
      state: absent
-     wait: yes
      region:  "{{region}}"
     when: action=="Destroy Stack"

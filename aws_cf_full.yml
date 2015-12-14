@@ -7,6 +7,7 @@
   connection: local
 
   tasks:
+
   - name: update CF Template
     command: aws s3 cp /home/ansible/staging/files/cloudtemplate_vpc.txt s3://cftemplates-gf/cloudtemplate_vpc.txt
   - name: launch ansible MongoDB cloudformation
@@ -29,7 +30,6 @@
       Stack: "ansible-{{stackname}}"
     when: createStack == "Yes"
 
-
   - name: Get VPC
     ec2_vpc_subnet_facts:
      region: "{{region}}"
@@ -47,39 +47,31 @@
 
 
   - name: Add all instance public IPs to host group
-    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
+    add_host: hostname={{ item.private_ip_address}}
               ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"			  
               groups=mongo_servers
-              mongod_port={{mongod_port_def+item.tags.NodeReplicaSetIndex|int}}
+              tag={{ec2}}
     with_items: ec2.instances
     when: "{{replica_set}} == 1"
   
   - name: Add all instance public IPs to host group when replica is greater
-    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
+    add_host: hostname={{item.private_ip_address}}
               groups=mongo_servers
               ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
-              mongod_port={{mongod_port_def+item.tags.NodeReplicaSetIndex|int}}
+              mongod_port={{mongod_port_def+item.tags.ClusterReplicaSetCount|int}}
               mongo_dns_name={{item.private_dns_name}}
     with_items: ec2.instances
     when: "{{replica_set}} == 3" 
 
-  - name: Create Primary mongoDB Host group
-    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
-              groups=mongo_primary
-              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
-              mongod_port=27017
-    with_items: ec2.instances
-    when: "{{replica_set}} == 3 and {{item.tags.NodeReplicaSetIndex|int}} == 0"
-
 
   - name: Add all instance public IPs to host group for Replica Set
-    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
+    add_host: hostname={{ item.private_ip_address}}
               groups=replication_servers
               ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
-              mongod_port={{mongod_port_def+item.tags.NodeReplicaSetIndex|int}}
+              mongod_port={{mongod_port_def+item.tags.ClusterReplicaSetCount|int}}
     with_items: ec2.instances
     when: "{{replica_set}} == 3"
-
+  
   - name: Change private key permission
     file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
 
@@ -87,47 +79,21 @@
     wait_for: host={{item.private_ip_address}} port=22 delay=1 timeout=320 state=started
     with_items: ec2.instances
 
-  - name: Create the hosts file for the local machine
-    sudo: yes
-    template: src=/home/ansible/staging/files/inventory.j2 dest=/etc/hosts
-
-- hosts: mongo_servers
-  gather_facts: yes
-  remote_user: ec2-user
-  serial: 1
-
-  tasks:
-  - name: Pause
-    pause: seconds=5
-  
 - hosts: mongo_servers
   gather_facts: yes
   remote_user: ec2-user
   serial: 1
 
   pre_tasks:
-  - debug: var=hostvars[inventory_hostname]
 
   - name: Install ansible key
     authorized_key: user=ec2-user
                     key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
 
-  roles:
-  - { role: common }
-
-  post_tasks:
-  - name: Pause
-    pause: seconds=5
-
-
-- hosts: mongo_servers
-  gather_facts: yes
-  remote_user: ec2-user
-  serial: 1
-
 
   roles:
-  - { role: mongod, when: "{{replica_set}} == 3"}
+  - { role: common, mongoDBInstances: "{{tag.instances}}" }
+  - { role: mongod } 
   
   post_tasks:
 
@@ -135,30 +101,11 @@
     become: yes
     become_method: sudo
     replace: dest=/etc/mongod.conf regexp="^bind_ip=127.0.0.1" replace="#bind_ip=127.0.0.1"
-    when: "{{replica_set}} == 1"
 
   - name: Start Mongodb
     become: yes
     become_method: sudo
     service: name=mongod state=restarted
-    when: "{{replica_set}} == 1"
-
-  - name: Pause
-    pause: seconds=5
-
-- hosts: mongo_primary
-  gather_facts: yes
-  remote_user: ec2-user
-
-  tasks:
-#  - debug: var=hostvars[inventory_hostname]
-#  - name: Pause
-#    pause: seconds=5
-
-  - name: Initialize the replication set
-    sudo: yes
-    shell: /usr/bin/mongo --port "{{hostvars[inventory_hostname].mongod_port }}" /tmp/repset_init.js
-    when: "{{hostvars[inventory_hostname].mongod_port == '27017'}} and {{replica_set}} == 3"
 
   - name: Get MongoDB example
     run_once: yes
@@ -168,7 +115,6 @@
     get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
          dest="/tmp/primer-dataset.json"
 
-
   - name: Import dataset into mongodb
     run_once: yes
     become: yes
@@ -176,18 +122,8 @@
     become_user: mongod
     shell: mongoimport --db test --collection restaurants --drop --file /tmp/primer-dataset.json
 
-  - name: Create root user
-    run_once: yes
-    become: yes
-    become_method: sudo
-    become_user: mongod
-    mongodb_user: database=admin
-                  name=root
-                  password=12345 
-                  roles='root' 
-                  state=present
-                  login_port="{{hostvars[inventory_hostname].mongod_port }}"
-
+  - name: Pause
+    pause: seconds=5
 - hosts: localhost
   gather_facts: no
 

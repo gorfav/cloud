@@ -1,0 +1,5 @@
+CFNInstanceProfile
+CFNRole
+CFNRolePolicy
+WebServer
+WebServerSecurityGroup

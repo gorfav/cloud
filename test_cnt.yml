@@ -1,0 +1,11 @@
+---
+- hosts: replication_servers
+  gather_facts: yes
+  remote_user: ec2-user
+  serial: 1
+
+  tasks:
+  - debug: var=hostvars[inventory_hostname]['ansible_eth0'].ipv4.address
+  - name: pause
+    pause: seconds=10 
+

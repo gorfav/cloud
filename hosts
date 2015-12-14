@@ -1,0 +1,9 @@
+[targets]
+
+localhost              ansible_connection=local
+
+[replication_servers]	
+ip-172-0-50-121 ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+
+[mongo_primary]
+ip-172-0-50-187 ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"

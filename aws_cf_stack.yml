@@ -1,0 +1,85 @@
+---
+# This Playbook is to test the cloudformation ansible plugin
+
+- hosts: localhost
+  gather_facts: no
+  sudo: yes
+  connection: local
+
+  tasks:
+
+  - name: update CF Template
+    command: aws s3 cp /home/ansible/staging/files/cloudtemplate_vpc.txt s3://cftemplates-gf/cloudtemplate_vpc.txt
+  - name: launch ansible MongoDB cloudformation
+    cloudformation:
+     stack_name: "{{stackname}}"
+     state: "present"
+     region: "{{region}}"
+     disable_rollback: false
+     template_url: "https://s3.eu-central-1.amazonaws.com/cftemplates-gf/cloudtemplate_vpc.txt"
+     template_parameters:
+      AvailabilityZone0: "{{zone}}"
+      ClusterReplicaSetCount: "{{replica_set}}"
+      RemoteAccessCIDR: "{{corpCidr}}"
+      VolumeSize: "{{volume_size}}"
+      VolumeType: "{{volume_type}}"
+      Iops: "{{iops}}"
+      NATInstanceType: "{{nat_instance_type}}"
+      NodeInstanceType: "{{node_instance_type}}"
+     tags:
+      Stack: "ansible-{{stackname}}"
+    when: createStack == "Yes"
+
+  - name: Get VPC
+    ec2_vpc_subnet_facts:
+     region: "{{region}}"
+     filters:
+        "tag:aws:cloudformation:stack-name": "{{stackname}}"
+    register: curvpc
+
+  - name: Get Info based On Tags
+    ec2_remote_facts:
+     region: "{{region}}"
+     filters:
+       vpc-id: "{{curvpc.subnets[0].vpc_id}}"
+       "tag:Type": MongoDBReplica
+    register: ec2
+
+
+  - name: Add all instance public IPs to host group
+    add_host: hostname={{ item.private_dns_name|regex_replace('\.\S+')}}
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"			  
+              groups=mongo_servers
+              tag={{ec2}}
+    with_items: ec2.instances
+    when: "{{replica_set}} == 1"
+  
+  - name: Add all instance public IPs to host group when replica is greater
+    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
+              groups=mongo_servers
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              mongod_port={{mongod_port_def+item.tags.ClusterReplicaSetCount|int}}
+              mongo_dns_name={{item.private_dns_name}}
+    with_items: ec2.instances
+    when: "{{replica_set}} == 3" 
+
+
+  - name: Add all instance public IPs to host group for Replica Set
+    add_host: hostname={{ item.private_dns_name|regex_replace('\.\S+')}}
+              groups=replication_servers
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              mongod_port={{mongod_port_def+item.tags.ClusterReplicaSetCount|int}}
+    with_items: ec2.instances
+    when: "{{replica_set}} == 3"
+  
+  - name: Change private key permission
+    file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
+
+  - name: Wait for instance to start up and be running
+    wait_for: host={{item.private_ip_address}} port=22 delay=1 timeout=320 state=started
+    with_items: ec2.instances
+
+  - name: Create the hosts file for the local machine
+    sudo: yes
+    template: src=/home/ansible/staging/files/inventory.j2 dest=/etc/hosts
+
