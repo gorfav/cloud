@@ -8,7 +8,7 @@
 
 - name: Create the data directory FS 
   sudo: yes
-  filesystem: fstype=ext4 dev=/dev/xvdf opts="--setra 32"
+  filesystem: fstype=ext4 dev=/dev/xvdf
 
 - name: Append Entry in fstab
   sudo: yes
@@ -24,7 +24,7 @@
 
 - name: Create the log directory FS 
   sudo: yes
-  filesystem: fstype=ext4 dev=/dev/xvdg opts="--setra 32"
+  filesystem: fstype=ext4 dev=/dev/xvdg
 
 - name: Append Entry in fstab
   sudo: yes
@@ -40,7 +40,7 @@
   
 - name: Create the data directory FS 
   sudo: yes
-  filesystem: fstype=ext4 dev=/dev/xvdh opts="--setra 32"
+  filesystem: fstype=ext4 dev=/dev/xvdh
   
 - name: Append Entry in fstab
   sudo: yes
@@ -80,13 +80,25 @@
 
 - name: Set readahead blocdev 
   sudo: yes
-  shell: "blockdev --setra 32 {{item.line}}"    
+  shell: "blockdev --setra 32 {{item.line}}"
   with_items: 
       - { device: '/dev/xvdf' }
       - { device: '/dev/xvdg' }
       - { device: '/dev/xvdh' }
 
-- name: Add readahead blocdev to ebs rules
+- name: Add readahead blocdev to startup
+  sudo: yes
+  lineinfile:
+      dest: /etc/rc.local
+      line: "/sbin/blockdev --setra 32 {{item.line}}"
+      create: yes 
+      state: present    
+  with_items: 
+      - { device: '/dev/xvdf' }
+      - { device: '/dev/xvdg' }
+      - { device: '/dev/xvdh' }
+
+- name: Add readahead blocdev limits to ebs rules
   sudo: yes
   lineinfile:
     dest: /etc/security/limits.d/90-nproc.conf

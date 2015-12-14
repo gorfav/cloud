@@ -1,6 +1,6 @@
 {% set counter = 0 -%}
 127.0.0.1 localhost
-{% for host in  ec2_inst.instances %}
+{% for host in  ec_inst.instances %}
 {{host.private_ip_address }} {{ host.private_dns_name|regex_replace('\.\S+') }}
 {% endfor %}
 
