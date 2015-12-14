@@ -1,0 +1,10 @@
+---
+# Handler for mongod
+
+- name: restart iptables
+  sudo: yes
+  service: name=iptables state=restarted
+  
+- name: restart mongod
+  sudo: yes
+  service: name=mongod state=restarted

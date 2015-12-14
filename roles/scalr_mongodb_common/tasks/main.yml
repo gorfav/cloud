@@ -52,7 +52,7 @@
 
 - name: Create a symlink from /data/jorunal to journal FS
   sudo: yes
-  mount: src=/data/journal dest=/journal owner=mongod group=mongod state=link
+  file: src=/journal dest=/data/journal owner=mongod group=mongod state=link
   
 - name: Change File Limits
   sudo: yes
@@ -80,7 +80,7 @@
 
 - name: Set readahead blocdev 
   sudo: yes
-  shell: "blockdev --setra 32 {{item.line}}"
+  shell: "blockdev --setra 32 {{item.device}}"
   with_items: 
       - { device: '/dev/xvdf' }
       - { device: '/dev/xvdg' }
@@ -90,7 +90,7 @@
   sudo: yes
   lineinfile:
       dest: /etc/rc.local
-      line: "/sbin/blockdev --setra 32 {{item.line}}"
+      line: "/sbin/blockdev --setra 32 {{item.device}}"
       create: yes 
       state: present    
   with_items: 
@@ -101,7 +101,7 @@
 - name: Add readahead blocdev limits to ebs rules
   sudo: yes
   lineinfile:
-    dest: /etc/security/limits.d/90-nproc.conf
+    dest: /etc/udev/rules.d/85-ebs.rules
     line: 'ACTION=="add", KERNEL=="{{item.device}}", ATTR{bdi/read_ahead_kb}="16"'
     create: yes 
     state: present    
@@ -111,9 +111,14 @@
       - { device: '/dev/xvdh' }
 
 - name: Replace keep alive setting to 300 seconds
-  sudo: yes
+  become: yes
+  become_method: sudo
   replace:
       dest: /proc/sys/net/ipv4/tcp_keepalive_time
-      replace: "300"
-      regexp: "*"
-      
+      replace: '300'
+      regexp: '^\S+'      
+
+- name: Create the iptables file
+  sudo: yes
+  template: src=iptables.j2 dest=/etc/sysconfig/iptables
+  notify: restart iptables
