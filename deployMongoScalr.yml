@@ -30,6 +30,11 @@
               mongod_setnum={{item.tags.mongodbNode}}
     with_items: ec_inst.instances    
     
+  - name: Create the hosts file for the local machine
+    sudo: yes
+    template: src=/home/ansible/staging/files/inventory_scalr.j2 dest=/etc/hosts
+    
+    
     
 - hosts: mongo_servers    
   gather_facts: yes
@@ -41,5 +46,5 @@
                     key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
 
   roles:
-  - { role: mongodb_common }
+  - { role: scalr_mongodb_common }
   
