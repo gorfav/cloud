@@ -25,6 +25,6 @@
     add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
               groups=mongo_servers
               ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
-              mongod_port={{item.tags.mongodb-port}}
+              mongod_port={{item.tags.mongodbPort}}
     with_items: ec_inst.instances    
     
