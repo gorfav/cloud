@@ -6,10 +6,7 @@
 - name: Create the data directory for the namenode metadata
   become: yes
   become_method: sudo
-  file: path="{{item.dirname}}" owner=mongod group=mongod state=directory
-  with_items:
-      - { dirname: '/data' }
-      - { dirname: '/data/mongo'}
+  file: path=/data owner=mongod group=mongod state=directory
 
 - name: Create the data directory FS 
   become: yes
@@ -30,11 +27,7 @@
 - name: Create the log directory for the namenode metadata
   become: yes
   become_method: sudo
-  file: path="{{item.dirname}}" owner=mongod group=mongod state=directory
-  with_items:
-      - { dirname: '/log' }
-      - { dirname: '/log/mongodb'}
-  
+  file: path=/log owner=mongod group=mongod state=directory
 
 - name: Create the log directory FS 
   become: yes
@@ -152,6 +145,16 @@
   become: yes
   become_method: sudo
   pip: name=pymongo state=latest executable=/usr/bin/pip use_mirrors=no
+
+- name: Create the data/mongo directory for the namenode metadata
+  become: yes
+  become_method: sudo
+  file: path=/data/mongo owner=mongod group=mongod state=directory
+  
+- name: Create the log mongodb directory for the namenode metadata
+  become: yes
+  become_method: sudo
+  file: path=/log/mongodb owner=mongod group=mongod state=directory
   
 - name: Create the mongodb configuration file
   become: yes
