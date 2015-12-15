@@ -74,6 +74,12 @@
   - { role: scalr_mongodb }
   
   post_tasks:
+  - name: restart mongod
+    become_user: yes
+    become_method: sudo
+    service: name=mongod state=restarted    
+  
+  post_tasks:
   - name: Initialize the replication set
     become_user: yes
     become_method: sudo

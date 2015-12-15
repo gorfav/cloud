@@ -144,3 +144,9 @@
   become: yes
   become_method: sudo
   pip: name=pymongo state=latest executable=/usr/bin/pip use_mirrors=no
+  
+- name: Create the mongodb configuration file
+  become_user: yes
+  become_method: sudo
+  template: src=mongod.conf_primary.j2 dest=/etc/mongod.conf 
+  notify: restart mongod

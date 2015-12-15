@@ -2,9 +2,11 @@
 # Handler for mongod
 
 - name: restart iptables
-  sudo: yes
+  become_user: yes
+  become_method: sudo
   service: name=iptables state=restarted
   
 - name: restart mongod
-  sudo: yes
+  become_user: yes
+  become_method: sudo
   service: name=mongod state=restarted
