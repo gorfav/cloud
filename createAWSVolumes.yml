@@ -7,8 +7,7 @@
         name: data_vol_{{item.id}}
         device_name: /dev/xvdf
         volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
-        volume_type: gp2
-        delete_on_termination: true
+        volume_type: gp2        
         region: "{{item.region}}"
     with_items: ec2.instances
     when: vol_type == "gp2"
@@ -21,8 +20,7 @@
         device_name: /dev/xvdf
         volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
         volume_type: io1
-        iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"
-        delete_on_termination: true
+        iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"        
         region: "{{item.region}}"
     with_items: ec2.instances
     when: vol_type == "gp2"
@@ -47,8 +45,7 @@
         name: log_vol_{{item.id}}
         device_name: /dev/xvdg
         volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
-        volume_type: io1
-        delete_on_termination: true
+        volume_type: io1        
         iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"
         region: "{{item.region}}"
     with_items: ec2.instances
@@ -61,8 +58,7 @@
         name: journal_vol_{{item.id}}
         device_name: /dev/xvdh
         volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
-        volume_type: gp2
-        delete_on_termination: true
+        volume_type: gp2        
         region: "{{item.region}}"
     with_items: ec2.instances
     when: vol_type == "gp2"
@@ -73,8 +69,7 @@
         name: journal_vol_{{item.id}}
         device_name: /dev/xvdh
         volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
-        volume_type: io1
-        delete_on_termination: true
+        volume_type: io1        
         iops: "{{ lookup('env','MONGODB_VOLUME_IOPS') }}"
         region: "{{item.region}}"
     with_items: ec2.instances
