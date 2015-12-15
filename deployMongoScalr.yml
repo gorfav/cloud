@@ -57,7 +57,7 @@
   tasks:
   - name: Pause for a while
     pause: seconds=5
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0 and {{replica_set}} == Yes"
+    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0 and {{replicaSet}} == Yes"
     
 - hosts: mongo_servers    
   gather_facts: yes
@@ -100,7 +100,7 @@
     become_user: yes
     become_method: sudo
     shell: /usr/bin/mongo --port "{{hostvars[inventory_hostname].mongod_port }}" /tmp/repset_init.js
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0 and {{replica_set}} == Yes"
+    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0 and {{replicaSet}} == Yes"
 
 - hosts: mongo_servers    
   gather_facts: yes
