@@ -33,7 +33,6 @@
         device_name: /dev/xvdg
         volume_size: "{{ lookup('env','MONGODB_VOLUME_SIZE') }}"
         volume_type: gp2
-        delete_on_termination: true
         region: "{{item.region}}"
     with_items: ec2.instances
     when: vol_type == "gp2"
