@@ -10,8 +10,7 @@ systemLog:
 
 # Where and how to store data.
 storage:
-  dbPath: /data/mongo
-  directoryPerDB: true
+  dbPath: /data/mongo  
   journal:
     enabled: true
 #  engine:
@@ -22,13 +21,14 @@ storage:
 
 # how the process runs
 processManagement:
-  fork: true  # fork and run in background
-  pidFilePath: /var/run/mongodb/mongod.pid  # location of pidfile
+  fork: true 
+  pidFilePath: /var/run/mongodb/mongod.pid
 
 # network interfaces
 net:
   port: 27017
-  bindIp: 127.0.0.1, {% for host in groups['mongo_servers'] %} , {{ hostvars[host]['ansible_' + iface].ipv4.address }} {% endfor %} # Listen to local interface only, comment to listen on all interfaces.
+  bindIp: 127.0.0.1,{{ hostvars[inventory_hostname]['ansible_' + iface].ipv4.address }}
+# {% for host in groups['mongo_servers'] %} , {{ hostvars[host]['ansible_' + iface].ipv4.address }} {% endfor %} # Listen to local interface only, comment to listen on all interfaces.
 
 security:
   keyFile: /data/secret
