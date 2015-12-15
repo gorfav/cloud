@@ -16,6 +16,7 @@
      filters:
        "tag:farmName": "{{ lookup('env','FARM_NAME') }}"
        "tag:Type": MongoDBReplica
+       instance-state-name: running
     register: ec_inst
 
 ##Create VOlume if Requested
@@ -48,10 +49,18 @@
     template: src=/home/ansible/staging/files/inventory_scalr.j2 dest=/etc/hosts
     
     
+- hosts: mongo_servers
+  gather_facts: yes
+  remote_user: ec2-user
+
+  tasks:
+  - name: Pause for a while
+    pause: seconds=5
     
 - hosts: mongo_servers    
   gather_facts: yes
   remote_user: ec2-user
+  serial: 1
   
   pre_tasks:
   - name: Install ansible key
@@ -60,6 +69,11 @@
 
   roles:
   - { role: scalr_mongodb_common }
+  
+  post_tasks:
+  - name: Pause for a while
+    pause: seconds=20
+
   
 - hosts: replication_servers    
   gather_facts: yes
