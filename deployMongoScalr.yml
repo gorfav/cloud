@@ -57,7 +57,7 @@
   tasks:
   - name: Pause for a while
     pause: seconds=5
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0 and {{replicaSet}} == Yes"
+    
     
 - hosts: mongo_servers    
   gather_facts: yes
@@ -100,7 +100,7 @@
     become_user: yes
     become_method: sudo
     shell: /usr/bin/mongo --port "{{hostvars[inventory_hostname].mongod_port }}" /tmp/repset_init.js
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0 and {{replicaSet}} == Yes"
+    when: "{{hostvars[inventory_hostname].mongod_setnum}} == '0' and replicaSet == 'Yes'"
 
 - hosts: mongo_servers    
   gather_facts: yes
@@ -115,7 +115,7 @@
     become_user: mongod
     get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
          dest="/tmp/primer-dataset.json"
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0"
+    when: "{{hostvars[inventory_hostname].mongod_setnum}} == '0'"
 
 
   - name: Import dataset into mongodb
@@ -124,7 +124,7 @@
     become_method: sudo
     become_user: mongod
     shell: mongoimport --db test --collection restaurants --drop --file /tmp/primer-dataset.json
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0"
+    when: "{{hostvars[inventory_hostname].mongod_setnum}} == '0'"
     
   - name: Create root user
     run_once: yes
@@ -137,5 +137,5 @@
                   roles='root' 
                   state=present
                   login_port="{{hostvars[inventory_hostname].mongod_port }}"
-    when: "{{hostvars[inventory_hostname].mongod_setnum}} == 0"               
+    when: "{{hostvars[inventory_hostname].mongod_setnum}} == '0'"               
   
