@@ -6,6 +6,7 @@
   vars:
    volume_type: "{{ lookup('env','MONGODB_VOLUME_TYPE') }}"
    createVolume: "{{ lookup('env','MONGODB_CREATE_VOLUME') }}"
+   replicaSet: "{{ lookup('env','MONGODB_REPLICASET') }}"
 
   tasks:
 #Get the List of EC2 Instances which are provisioned for this farm
@@ -13,7 +14,7 @@
     ec2_remote_facts:
      region: "{{ lookup('env','AWS_DEFAULT_REGION') }}"
      filters:
-       "tag:farm-name": "{{ lookup('env','FARM_NAME') }}"
+       "tag:farmName": "{{ lookup('env','FARM_NAME') }}"
        "tag:Type": MongoDBReplica
     register: ec_inst
 
@@ -28,7 +29,19 @@
               mongod_port={{item.tags.mongodbPort}}
               mongod_set={{item.tags.mongodbSet}}
               mongod_setnum={{item.tags.mongodbNode}}
+              mongod_farmname={{item.tags.farmName}}
     with_items: ec_inst.instances    
+
+  - name: Add all instance public IPs to host group for Replica Set
+    add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
+              groups=replication_servers
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              mongod_port={{item.tags.mongodbPort}}
+              mongod_set={{item.tags.mongodbSet}}
+              mongod_setnum={{item.tags.mongodbNode}}
+              mongod_farmname={{item.tags.farmName}}
+    with_items: ec_inst.instances    
+    when: replicaSet == "Yes"
     
   - name: Create the hosts file for the local machine
     sudo: yes
@@ -47,4 +60,60 @@
 
   roles:
   - { role: scalr_mongodb_common }
+  
+- hosts: replication_servers    
+  gather_facts: yes
+  remote_user: ec2-user
+  
+  pre_tasks:
+  - name: Install ansible key
+    authorized_key: user=ec2-user
+                    key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
+
+  roles:
+  - { role: scalr_mongodb }
+  
+  post_tasks:
+  - name: Initialize the replication set
+    become_user: yes
+    become_method: sudo
+    shell: /usr/bin/mongo --port "{{hostvars[inventory_hostname].mongod_port }}" /tmp/repset_init.js
+    when: "{{hostvars[inventory_hostname].mongod_setnum == '0'}} and {{replica_set}} == 'Yes'"
+
+- hosts: mongo_servers    
+  gather_facts: yes
+  remote_user: ec2-user
+  
+  tasks:
+
+  - name: Get MongoDB example
+    run_once: yes
+    become: yes
+    become_method: sudo
+    become_user: mongod
+    get_url: url=https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/dataset.json
+         dest="/tmp/primer-dataset.json"
+    when: "{{hostvars[inventory_hostname].mongod_setnum == '0'}}"
+
+
+  - name: Import dataset into mongodb
+    run_once: yes
+    become: yes
+    become_method: sudo
+    become_user: mongod
+    shell: mongoimport --db test --collection restaurants --drop --file /tmp/primer-dataset.json
+    when: "{{hostvars[inventory_hostname].mongod_setnum == '0'}}"
+    
+  - name: Create root user
+    run_once: yes
+    become: yes
+    become_method: sudo
+    become_user: mongod
+    mongodb_user: database=admin
+                  name=root
+                  password=12345 
+                  roles='root' 
+                  state=present
+                  login_port="{{hostvars[inventory_hostname].mongod_port }}"
+    when: "{{hostvars[inventory_hostname].mongod_setnum == '0'}}"               
   
