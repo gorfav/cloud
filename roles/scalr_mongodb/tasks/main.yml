@@ -1,31 +1,33 @@
 ---
 - name: Create the mongodb startup file
-  become_user: yes
+  become: yes
   become_method: sudo
   template: src=mongod.j2 dest=/etc/init.d/mongod mode=0655
   
 - name: Create the mongodb configuration file
-  become_user: yes
+  become: yes
   become_method: sudo
   template: src=mongod.conf.j2 dest=/etc/mongod.conf 
   
 - name: Create the secret key
+  become: yes
+  become_method: sudo
   run_once: true
   command: openssl rand -base64 741 -out files/secret
   delegate_to: 127.0.0.1
   
 - name: Copy the keyfile for authentication
-  become_user: yes
+  become: yes
   become_method: sudo
   copy: src=secret dest=/data/secret owner=mongod group=mongod mode=0400
   
 - name: Start the mongodb service
-  become_user: yes
+  become: yes
   become_method: sudo
   command: creates=/var/lock/subsys/mongod /etc/init.d/mongod restart
   
 - name: Create the file to initialize the mongod replica set
-  become_user: yes
+  become: yes
   become_method: sudo
   template: src=repset_init.j2 dest=/tmp/repset_init.js
   when: "{{hostvars[inventory_hostname].mongod_setnum == '0'}}"
