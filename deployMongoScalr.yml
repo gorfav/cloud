@@ -80,6 +80,7 @@
 - hosts: replication_servers    
   gather_facts: yes
   remote_user: ec2-user
+  serial: 1
   
   pre_tasks:
   - name: Install ansible key
@@ -90,17 +91,21 @@
   - { role: scalr_mongodb }
   
   post_tasks:
-  - name: restart mongod
-    become_user: yes
-    become_method: sudo
-    service: name=mongod state=restarted    
   
-  post_tasks:
+
   - name: Initialize the replication set
-    become_user: yes
+    become: yes
     become_method: sudo
     shell: /usr/bin/mongo --port "{{hostvars[inventory_hostname].mongod_port }}" /tmp/repset_init.js
     when: "{{hostvars[inventory_hostname].mongod_setnum}} == '0' and replicaSet == 'Yes'"
+
+  - name: restart mongod
+    become: yes
+    become_method: sudo
+    service: name=mongod state=restarted    
+
+  - name: Pause for a while
+    pause: seconds=10
 
 - hosts: mongo_servers    
   gather_facts: yes

@@ -135,13 +135,13 @@
     become: yes
     become_method: sudo
     replace: dest=/etc/mongod.conf regexp="^bind_ip=127.0.0.1" replace="#bind_ip=127.0.0.1"
-    when: "{{replica_set}} == 1"
+    when: "{{replica_set}} == '1'"
 
   - name: Start Mongodb
     become: yes
     become_method: sudo
     service: name=mongod state=restarted
-    when: "{{replica_set}} == 1"
+    when: "{{replica_set}} == '1'"
 
   - name: Pause
     pause: seconds=5
