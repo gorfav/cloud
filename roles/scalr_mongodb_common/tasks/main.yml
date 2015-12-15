@@ -1,61 +1,76 @@
 - name: Create the hosts file for all machines
-  sudo: yes
+  become: yes
+  become_method: sudo
   template: src=hosts.j2 dest=/etc/hosts
   
 - name: Create the data directory for the namenode metadata
-  sudo: yes
+  become: yes
+  become_method: sudo
   file: path=/data owner=mongod group=mongod state=directory
 
 - name: Create the data directory FS 
-  sudo: yes
+  become: yes
+  become_method: sudo
   filesystem: fstype=ext4 dev=/dev/xvdf
 
 - name: Append Entry in fstab
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile: dest=/etc/fstab line="/dev/xvdf /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
 
 - name: Mount the data FS
-  sudo: yes
+  become: yes
+  become_method: sudo
   mount: name=/data src=/dev/xvdf state=present fstype=ext4
 
 - name: Create the log directory for the namenode metadata
-  sudo: yes
+  become: yes
+  become_method: sudo
   file: path=/log owner=mongod group=mongod state=directory
 
 - name: Create the log directory FS 
-  sudo: yes
+  become: yes
+  become_method: sudo
   filesystem: fstype=ext4 dev=/dev/xvdg
 
 - name: Append Entry in fstab
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile: dest=/etc/fstab line="/dev/xvdg /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
 
 - name: Mount the log FS
-  sudo: yes
+  become: yes
+  become_method: sudo
   mount: name=/log src=/dev/xvdg state=present fstype=ext4
 
 - name: Create the journal directory for the namenode metadata
-  sudo: yes
+  become: yes
+  become_method: sudo
   file: path=/journal owner=mongod group=mongod state=directory
   
 - name: Create the data directory FS 
-  sudo: yes
+  become: yes
+  become_method: sudo
   filesystem: fstype=ext4 dev=/dev/xvdh
   
 - name: Append Entry in fstab
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile: dest=/etc/fstab line="/dev/xvdh /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
 
 - name: Mount the journal FS
-  sudo: yes
+  become: yes
+  become_method: sudo
   mount: name=/journal src=/dev/xvdh state=present fstype=ext4
 
 - name: Create a symlink from /data/jorunal to journal FS
-  sudo: yes
+  become: yes
+  become_method: sudo
   file: src=/journal dest=/data/journal owner=mongod group=mongod state=link
   
 - name: Change File Limits
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile: 
     dest: /etc/security/limits.conf
     line: "{{item.line}}"
@@ -68,7 +83,8 @@
       - { line: '* hard nproc 32000' }
 
 - name: Change nProc File Limits
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile:
     dest: /etc/security/limits.d/90-nproc.conf
     line: "{{item.line}}"
@@ -79,7 +95,8 @@
       - { line: '* hard nproc 32000' }
 
 - name: Set readahead blocdev 
-  sudo: yes
+  become: yes
+  become_method: sudo
   shell: "blockdev --setra 32 {{item.device}}"
   with_items: 
       - { device: '/dev/xvdf' }
@@ -87,7 +104,8 @@
       - { device: '/dev/xvdh' }
 
 - name: Add readahead blocdev to startup
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile:
       dest: /etc/rc.local
       line: "/sbin/blockdev --setra 32 {{item.device}}"
@@ -99,7 +117,8 @@
       - { device: '/dev/xvdh' }
 
 - name: Add readahead blocdev limits to ebs rules
-  sudo: yes
+  become: yes
+  become_method: sudo
   lineinfile:
     dest: /etc/udev/rules.d/85-ebs.rules
     line: 'ACTION=="add", KERNEL=="{{item.device}}", ATTR{bdi/read_ahead_kb}="16"'
@@ -113,12 +132,15 @@
 - name: Replace keep alive setting to 300 seconds
   become: yes
   become_method: sudo
-  replace:
-      dest: /proc/sys/net/ipv4/tcp_keepalive_time
-      replace: '300'
-      regexp: '^\S+'      
+  command: echo 300 | sudo tee /proc/sys/net/ipv4/tcp_keepalive_time
 
 - name: Create the iptables file
-  sudo: yes
+  become: yes
+  become_method: sudo
   template: src=iptables.j2 dest=/etc/sysconfig/iptables
   notify: restart iptables
+
+- name: Install the latest pymongo package
+  become: yes
+  become_method: sudo
+  pip: name=pymongo state=latest executable=/usr/local/bin/pip use_mirrors=no
