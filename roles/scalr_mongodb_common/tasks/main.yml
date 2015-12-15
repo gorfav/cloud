@@ -24,7 +24,7 @@
 - name: Mount the data FS
   become: yes
   become_method: sudo
-  mount: name=/data src=/dev/xvdf state=present fstype=ext4
+  mount: name=/data src=/dev/xvdf state=mounted fstype=ext4
 
  
 - name: Create the log directory for the namenode metadata
@@ -49,7 +49,7 @@
 - name: Mount the log FS
   become: yes
   become_method: sudo
-  mount: name=/log src=/dev/xvdg state=present fstype=ext4
+  mount: name=/log src=/dev/xvdg state=mounted fstype=ext4
 
 - name: Create the journal directory for the namenode metadata
   become: yes
@@ -69,7 +69,7 @@
 - name: Mount the journal FS
   become: yes
   become_method: sudo
-  mount: name=/journal src=/dev/xvdh state=present fstype=ext4
+  mount: name=/journal src=/dev/xvdh state=mounted fstype=ext4
 
 - name: Create a symlink from /data/jorunal to journal FS
   become: yes
