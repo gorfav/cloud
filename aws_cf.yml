@@ -158,7 +158,7 @@
   - name: Initialize the replication set
     sudo: yes
     shell: /usr/bin/mongo --port "{{hostvars[inventory_hostname].mongod_port }}" /tmp/repset_init.js
-    when: "{{hostvars[inventory_hostname].mongod_port == '27017'}} and {{replica_set}} == 3"
+    when: "{{hostvars[inventory_hostname].mongod_port}} == 27017 and {{replica_set}} == 3"
 
   - name: Get MongoDB example
     run_once: yes
