@@ -72,7 +72,7 @@
   
   post_tasks:
   - name: Pause for a while
-    pause: seconds=20
+    pause: seconds=10
 
   
 - hosts: replication_servers    

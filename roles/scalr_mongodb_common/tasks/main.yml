@@ -27,7 +27,7 @@
   mount: name=/data src=/dev/xvdf state=present fstype=ext4
 
  
-- name: Create the data directory for the namenode metadata
+- name: Create the log directory for the namenode metadata
   become: yes
   become_method: sudo
   file: path="{{item.dirname}}" owner=mongod group=mongod state=directory
@@ -41,10 +41,10 @@
   become_method: sudo
   filesystem: fstype=ext4 dev=/dev/xvdg
 
-- name: Append Entry in fstab
+- name: Append Entry in fstab for log dir
   become: yes
   become_method: sudo
-  lineinfile: dest=/etc/fstab line="/dev/xvdg /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
+  lineinfile: dest=/etc/fstab line="/dev/xvdg /log ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
 
 - name: Mount the log FS
   become: yes
@@ -56,15 +56,15 @@
   become_method: sudo
   file: path=/journal owner=mongod group=mongod state=directory
   
-- name: Create the data directory FS 
+- name: Create the journal directory FS 
   become: yes
   become_method: sudo
   filesystem: fstype=ext4 dev=/dev/xvdh
   
-- name: Append Entry in fstab
+- name: Append Entry in fstab for journal
   become: yes
   become_method: sudo
-  lineinfile: dest=/etc/fstab line="/dev/xvdh /data ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
+  lineinfile: dest=/etc/fstab line="/dev/xvdh /journal ext4 defaults,auto,noatime,noexec 0 0" create=yes state=present
 
 - name: Mount the journal FS
   become: yes
