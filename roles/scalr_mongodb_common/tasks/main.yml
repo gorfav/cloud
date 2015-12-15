@@ -6,7 +6,10 @@
 - name: Create the data directory for the namenode metadata
   become: yes
   become_method: sudo
-  file: path=/data owner=mongod group=mongod state=directory
+  file: path="{{item.dirname}}" owner=mongod group=mongod state=directory
+  with_items:
+      - { dirname: '/data' }
+      - { dirname: '/data/mongo'}
 
 - name: Create the data directory FS 
   become: yes
@@ -23,10 +26,15 @@
   become_method: sudo
   mount: name=/data src=/dev/xvdf state=present fstype=ext4
 
-- name: Create the log directory for the namenode metadata
+ 
+- name: Create the data directory for the namenode metadata
   become: yes
   become_method: sudo
-  file: path=/log owner=mongod group=mongod state=directory
+  file: path="{{item.dirname}}" owner=mongod group=mongod state=directory
+  with_items:
+      - { dirname: '/log' }
+      - { dirname: '/log/mongodb'}
+  
 
 - name: Create the log directory FS 
   become: yes
