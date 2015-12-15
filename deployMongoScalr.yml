@@ -92,7 +92,7 @@
   
   post_tasks:
   
-
+  - debug: var="{{hostvars[inventory_hostname]}}"
   - name: Initialize the replication set
     become: yes
     become_method: sudo
