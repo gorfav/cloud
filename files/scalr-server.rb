@@ -11,6 +11,7 @@ service[:enable] = true
 app[:ip_ranges] = ['172.0.0.0/16']
 app[:security_group_name] = 'scalrSecurityGroup'
 supervisor[:tz] = 'Europe/Amsterdam'
+routing[:endpoint_host] = 'scalrserver.poc.nl'
 
 # Use separate MySQL
 app[:mysql_scalr_host] = '127.0.0.1'      # Host for the Scalr MySQL database.

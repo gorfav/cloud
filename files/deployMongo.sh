@@ -1,8 +1,8 @@
 #!/bin/bash
 sudo yum -y update
-echo "[MongoDB]
+echo "[mongodb-org-3.0]
 name=MongoDB Repository
-baseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64
+baseurl=https://repo.mongodb.org/yum/amazon/2013.03/mongodb-org/3.0/x86_64/
 gpgcheck=0
 enabled=1" | sudo tee -a /etc/yum.repos.d/mongodb.repo
 
