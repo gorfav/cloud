@@ -1,4 +1,19 @@
 ---
 - name: Create the template file for the SVT  
-  template: src=workload_tmpl.j2 dest=/home/ec2-user/YCSB/workloads
+  template: src=workload_tmpl.j2 dest=/home/ec2-user/YCSB/workloads/workload_svt
+  
+- name: Get List of MongoDB Replica Sets based on Farm Name
+    ec2_remote_facts:
+     region: "{{region}}"
+     filters:       
+       "tag:farmName": "{{farmname}}"
+    register: ec2MNG
+    
+- name: Find Primary 
+  shell: "mongo --eval "printjson(db.isMaster())" | grep "ismaster" | awk '{print $3}' | cut -f1 -d','" 
+  delegate_to: ec2MNG.instances.tags.mngDNS
+  register: mngInst: { "hostname": ec2MNG.instances.tags.mngDNS,"isprimary": stdout_lines }
+  when: stdout_lines == "true" 
+            
+  
 
