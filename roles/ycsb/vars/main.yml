@@ -1,0 +1,17 @@
+---
+startThread: "{{ lookup('env','START_THREAD_COUNT') }}"
+endThread: "{{ lookup('env','END_THREAD_COUNT') }}"
+threadIncrement: "{{ lookup('env','THREAD_INCREMENT') }}"
+recordcount: "{{ lookup('env','RECORDCOUNT') }}"
+operationcount: "{{ lookup('env','OPERATIONCOUNT') }}"
+fieldcount: "{{ lookup('env','FIELDCOUNT') }}"
+fieldlength: "{{ lookup('env','FIELDLENGTH') }}"
+fieldlengthdistribution: "{{ lookup('env','FIELDLENGTHDISTRIBUTION') }}"
+readproportion: "{{ lookup('env','READPROPORTION') }}"
+updateproportion: "{{ lookup('env','UPDATEPROPORTION') }}"
+insertproportion: "{{ lookup('env','INSERTPROPORTION') }}"
+readmodifywriteproportion: "{{ lookup('env','READMODIFYWRITEPROPORTION') }}"
+measurementtype: "{{ lookup('env','MEASUREMENTTYPE') }}"
+granularity: "{{ lookup('env','GRANULARITY') }}"
+
+

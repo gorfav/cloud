@@ -1,0 +1,4 @@
+---
+- name: Create the template file for the SVT  
+  template: src=workload_tmpl.j2 dest=/home/ec2-user/YCSB/workloads
+

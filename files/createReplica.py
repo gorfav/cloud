@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from boto import ec2
 from subprocess import Popen, PIPE
 
-#time.sleep(60)
+#time.sleep(300)
 region = os.environ.get('AWS_DEFAULT_REGION')
 aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
 aws_secret_key = os.environ.get('AWS_SECRET_KEY')
@@ -25,18 +25,31 @@ def getMyIP():
 
 
 def inititateReplica(conn):
-    line = replConfig.write("rs.initiate()\n")
-    line = replConfig.write("sleep(13000)\n")
+    #line = replConfig.write("rs.initiate()\n")
+    #line = replConfig.write("sleep(13000)\n")
+    counter = 1
+    config = "{_id: 'rs_" + scalr_farm_name + "', members : ["
+        
     print scalr_farm_name
     print aws_secret_key
-    instList = conn.get_all_reservations(filters={"tag:farmName" : scalr_farm_name,'instance-state-name': 'running'})
-    print instList
+    instList = conn.get_all_reservations(filters={"tag:farmName" : scalr_farm_name,'instance-state-name': 'running'})    
     for r in instList:
         for i in r.instances:
-#          cmdRepl="rs.add('" + i.private_ip_address +"')\n"
-          cmdRepl="rs.add('" + i.tags['mngDNS'] +"')\n"      
-          line = replConfig.write(cmdRepl)
-          line = replConfig.write("sleep(8000)\n")
+          #cmdRepl="rs.add('" + i.tags['mngDNS'] +"')\n"      
+          #line = replConfig.write(cmdRepl)
+          #line = replConfig.write("sleep(8000)\n")
+          mongoSet = i.tags['mngDNS']
+          if mongoSet.find('mongo1') >= 0:
+            print mongoSet
+            config = config + " {_id : 0,host: '"+ i.tags['mngDNS'] +"'},"
+          else:
+            config = config + " {_id : " + str(counter) + ",host: '"+ i.tags['mngDNS'] +"'},"
+            counter = counter + 1
+
+    config = config + " ]}"
+    line = replConfig.write("rs.initiate("+config+")\n")
+    line = replConfig.write("sleep(8000)\n")
+                
     return
 
 def addMembertoSet(conn):
@@ -127,8 +140,6 @@ def main():
         print "File created"
         process=Popen(["/usr/bin/mongo","localhost:27017/admin","/tmp/replset.js"],stdout=PIPE,stderr=PIPE)
         process.wait()
-#        while process.poll() is None:
-#            print("Still working...")
         for line in process.stdout:
           print line
         print process.returncode

@@ -22,6 +22,7 @@ scalr_instance_index = os.environ.get('SCALR_INSTANCE_INDEX')
 aws_dns_name = os.environ.get('AWS_DNS_NAME')
 mongoInternalIP = os.environ.get('SCALR_INTERNAL_IP')
 mongoReplicaDNSName = os.environ.get('MONGO_DNS_NAME')
+mongoEnv = os.environ.get('MONGO_ENV')
 
 def main():
 
@@ -29,18 +30,19 @@ def main():
     print aws_dns_name
     print region
     print mongoInternalIP
+    print mongoReplicaDNSName+"."+mongoEnv+"."+aws_dns_name
     
 try:
     conn_eu = route53.connect_to_region(region)
     hostedZone = conn_eu.get_zone(aws_dns_name)    
     change_set = route53.record.ResourceRecordSets(conn_eu, hostedZone.id)
-    changes1 = change_set.add_change("UPSERT",mongoReplicaDNSName+"."+aws_dns_name, type="A")
+    changes1 = change_set.add_change("UPSERT",mongoReplicaDNSName+"."+mongoEnv+"."+aws_dns_name, type="A",ttl=300)
     changes1.add_value(mongoInternalIP)
     change_set.commit()
 ##Add dns name to tag    
     conn_inst = ec2.connect_to_region(region,aws_access_key_id=aws_access_key,aws_secret_access_key=aws_secret_key)
     instID=get_instance_metadata()['instance-id']
-    conn_inst.create_tags([instID], {"mngDNS": mongoReplicaDNSName+"."+aws_dns_name})
+    conn_inst.create_tags([instID], {"mngDNS": mongoReplicaDNSName+"."+mongoEnv+"."+aws_dns_name})
     
 except Exception as e: print(e)
   
