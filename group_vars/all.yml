@@ -3,6 +3,7 @@
 # The directory prefix where the database files would be stored
 mongodb_datadir_prefix: /data/
 #mongod_port: 27017
+mngInst: null
 mongod_port_def: 27017
 createStack: "{{ lookup('env','CREATE_STACK') }}"
 stackname: "{{ lookup('env','STACK_NAME') }}"
