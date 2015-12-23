@@ -114,7 +114,7 @@
   - debug: var=hostvars['localhost']._raw_params
 
   - name: Install ansible key
-    authorized_key: user=ubunut
+    authorized_key: user=ubuntu
                     key="{{lookup('file', '/home/ansible/.ssh/id_rsa.pub')}}"
 
   roles:
