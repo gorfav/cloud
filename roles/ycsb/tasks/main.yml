@@ -1,10 +1,10 @@
 ---
 - name: Create the template file for the SVT
-  template: src=workload_tmpl.j2 dest=/home/ubuntu/ycsb-0.3.0/workloads/workload_svt
+  template: src=workload_tmpl.j2 dest=/home/ubuntu/YCSB/workloads/workload_svt
 
 - name: Run load  
-  shell: "cd /home/ubuntu/ycsb-0.3.0;./bin/ycsb load mongodb -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/ycsb-0.3.0/logfiles/mongodout/load_{{recordcount}}.log"
+  shell: "cd /home/ubuntu/YCSB;./bin/ycsb load mongodb -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/YCSB/logfiles/mongodout/load_{{recordcount}}.log"
 
 - name: Execute Operations  
-  shell: "cd /home/ubuntu/ycsb-0.3.0;./bin/ycsb run mongodb -threads {{item}} -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/ycsb-0.3.0/logfiles/mongodout/YCSBrun{{operationcount}}_{{item}}.out"
+  shell: "cd /home/ubuntu/YCSB;./bin/ycsb run mongodb -threads {{item}} -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/YCSB/logfiles/mongodout/YCSBrun{{operationcount}}_{{item}}.out"
   with_sequence: start={{startThread}} end={{endThread}} stride={{threadIncrement}}
