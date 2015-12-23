@@ -1,25 +1,17 @@
 #!/usr/bin/env python
 
 import socket
-import json
+import json,simplejson
 import sys
 import os
 import time
 import smtplib
 from email.mime.text import MIMEText
 from pprint import pprint
-
-from boto import ec2
-from subprocess import Popen, PIPE
-from boto import vpc
-
-import socket
-import json,simplejson
-import os
-import time
 from pymongo import MongoClient
 from boto import ec2
 from subprocess import Popen, PIPE
+from boto import vpc
 
 #time.sleep(300)
 region = os.environ.get('AWS_DEFAULT_REGION')
@@ -39,7 +31,7 @@ def sendEmail(filename):
 #    msg = {}
     msg = MIMEText(attachFile.read())
     attachFile.close()
-    msg['Subject'] = 'The contents of %s' % filename
+    msg['Subject'] = 'Scalr Environment Change for %s' % scalr_farm_name
     msg['From'] = sender
     msg['To'] = receiever
     try:
