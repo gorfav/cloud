@@ -2,9 +2,23 @@
 - name: Create the template file for the SVT
   template: src=workload_tmpl.j2 dest=/home/ubuntu/YCSB/workloads/workload_svt
 
+- name: Remove previous run Files
+  shell: "rm /home/ubuntu/YCSB/logfiles/mongodout/* 2>/dev/null"
+
 - name: Run load  
   shell: "cd /home/ubuntu/YCSB;./bin/ycsb load mongodb -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/YCSB/logfiles/mongodout/load_{{recordcount}}.log"
 
-- name: Execute Operations  
-  shell: "cd /home/ubuntu/YCSB;./bin/ycsb run mongodb -threads {{item}} -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/YCSB/logfiles/mongodout/YCSBrun{{operationcount}}_{{item}}.out"
+##Create a thread sequence
+- set_fact: threadList="{{item}}"
   with_sequence: start={{startThread}} end={{endThread}} stride={{threadIncrement}}
+  register: threadResult
+
+##map sequence into a list
+- set_fact: threadDict="{{threadResult.results|map(attribute='ansible_facts.threadList') | list }}"
+
+- name: Execute Operations  
+  shell: "cd /home/ubuntu/YCSB;./bin/ycsb run mongodb -target {{item[1]}} -threads {{item[0]}} -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/YCSB/logfiles/mongodout/YCSBrun{{item[1]}}_{{item[0]}}.out"
+  with_nested:
+      - "{{threadDict}}"
+      - "target.split(',')"
+  #with_sequence: start={{startThread}} end={{endThread}} stride={{threadIncrement}}

@@ -14,5 +14,6 @@ readmodifywriteproportion: "{{ lookup('env','READMODIFYWRITEPROPORTION') }}"
 measurementtype: "{{ lookup('env','MEASUREMENTTYPE') }}"
 granularity: "{{ lookup('env','GRANULARITY') }}"
 farmname: "{{ lookup('env','FARM_NAME') }}"
+target: "{{ lookup('env','TARGET_THROUGHPUT') }}"
 
 
