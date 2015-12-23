@@ -4,6 +4,7 @@
 
 - name: Remove previous run Files
   shell: "rm /home/ubuntu/YCSB/logfiles/mongodout/* 2>/dev/null"
+  ignore_errors: yes
 
 - name: Run load  
   shell: "cd /home/ubuntu/YCSB;./bin/ycsb load mongodb -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/YCSB/logfiles/mongodout/load_{{recordcount}}.log"
@@ -21,4 +22,14 @@
   with_nested:
       - "{{threadDict}}"
       - "target.split(',')"
-  #with_sequence: start={{startThread}} end={{endThread}} stride={{threadIncrement}}
+
+- name: Generate Graph
+  shell: /usr/bin/python /home/ubuntu/YCSB/generateGraph.py
+   
+- name: Send Graphs via email   
+    host='localhost'
+    port=25
+    to="gorfav@yahoo.com"
+    subject='Ansible-report'
+    attach="/home/ubuntu/YCSB/logfiles/throughput-vs-throughput.png /home/ubuntu/YCSB/logfiles/read-vs-throughput.png /home/ubuntu/YCSB/logfiles/update-vs-throughput.png"
+    body='Graphs for throughput: {{target}} with {{operationcount}} Operations and Farm: {{farmname}}'
