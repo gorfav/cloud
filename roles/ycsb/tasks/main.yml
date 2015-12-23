@@ -1,19 +1,10 @@
 ---
-- name: Create the template file for the SVT  
+- name: Create the template file for the SVT
   template: src=workload_tmpl.j2 dest=/home/ec2-user/YCSB/workloads/workload_svt
-  
-- name: Get List of MongoDB Replica Sets based on Farm Name
-  ec2_remote_facts:
-     region: "{{region}}"
-     filters:       
-       "tag:farmName": "{{farmname}}"
-  register: ec2MNG
-    
-- name: Find Primary 
-  shell: "mongo --eval "printjson(db.isMaster())" | grep "ismaster" | awk '{print $3}' | cut -f1 -d','" 
-  delegate_to: ec2MNG.instances.tags.mngDNS
-  register: mngInst: { "hostname": ec2MNG.instances.tags.mngDNS,"isprimary": stdout_lines }
-  when: stdout_lines == "true" 
-            
-  
 
+- name: Run load  
+  shell: "cd /home/ec2-user/ycsb-0.3.0;./bin/ycsb load mongodb -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/ycsb-0.3.0/logfiles/mongodout/load_{{recordcount}}.log"
+
+- name: Execute Operations  
+  shell: "cd /home/ec2-user/ycsb-0.3.0;./bin/ycsb run mongodb -threads {{item}} -s -P workloads/workload_svt -p mongodb.url=mongodb://{{hostvars['localhost']._raw_params}}:27017/ycsb?w=0 > /home/ubuntu/ycsb-0.3.0/logfiles/mongodout/YCSBrun{{operationcount}}_{{item}}.out"
+  with_sequence: start={{startThread}} end={{endThread}} stride={{threadIncrement}}

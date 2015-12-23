@@ -6,35 +6,38 @@
   sudo: yes
   connection: local
 
-  tasks: 
+  tasks:
   - name: Get Info based On Tags
     ec2_remote_facts:
      region: "{{region}}"
-     filters:       
+     filters:
+       "instance-state-name": running 
        "tag:Type": mongoSVT
     register: ec2
 
 
   - name: Add all instance public IPs to host group
     add_host: hostname={{item.private_dns_name|regex_replace('\.\S+')}}
-              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"			  
-              groups=mongo_svt              
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              groups=mongo_svt
     with_items: ec2.instances
-    
+
   - name: Get List of MongoDB Replica Sets based on Farm Name
     ec2_remote_facts:
       region: "{{region}}"
-      filters:       
+      filters:
+       "instance-state-name": running 
        "tag:farmName": "{{farmname}}"
     register: ec2MNG
 
   - name: Add all instance of mongoDB private IPs to host group
     add_host: hostname={{item.private_ip_address}}
-              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"			  
+              ansible_ssh_private_key_file="/home/ansible/.ssh/mykey.pem"
+              dnsname={{item.tags.mngDNS}}
               groups=mongo_replica
     with_items: ec2MNG.instances
 
-    
+
   - name: Change private key permission
     file: path=/home/ansible/.ssh/id_rsa.pub mode=0400
 
@@ -46,40 +49,69 @@
     sudo: yes
     template: src=/home/ansible/staging/files/inventory.j2 dest=/etc/hosts
 
+#- hosts: mongo_replica
+#  gather_facts: yes
+#  remote_user: ec2-user
+
+#  tasks:
+#  - name: Pause
+#    pause: seconds=5
+
+#  - debug: var=hostvars[inventory_hostname]
+
+#- hosts: mongo_svt
+#  gather_facts: yes
+#  remote_user: ec2-user
+#  tasks:
+#  - name: Pause
+#    pause: seconds=5
+
+
 - hosts: mongo_replica
-  gather_facts: yes
-  remote_user: ec2-user  
-
-  tasks:
-  - name: Pause
-    pause: seconds=5
-
-- hosts: mongo_replica
-  gather_facts: yes
-  remote_user: ec2-user  
-
-  tasks:
-  - name: Find Primary 
-    shell: "mongo --eval "printjson(db.isMaster())" | grep "ismaster" | awk '{print $3}' | cut -f1 -d','"     
-    register: mngInst = hostvars[inventory_hostname].tags.mngDNS
-    when: stdout_lines == "true" 
-
-
-- hosts: mongo_svt
-  gather_facts: yes
-  remote_user: ec2-user  
-
-  tasks:
-  - name: Pause
-    pause: seconds=5
-  
-- hosts: mongo_svt
   gather_facts: yes
   remote_user: ec2-user
-  
+  serial: 1
+  tasks:
+  - name: Pause
+    pause: seconds=5
+
+#  - debug: var=hostvars[inventory_hostname]
+  - name: Find Primary
+    shell: " if [ `mongo --eval 'printjson(db.isMaster())' | grep 'ismaster' | grep true | wc -c` -gt 1 ];then ec2-metadata | grep local-ipv4 | awk '{print $2}'; fi"
+    register: out
+
+  - local_action: set_fact mngInst= {{out.stdout}}
+    when: out.stdout| trim != ''
+
+#  - name: Register primary
+#    command: "echo {{out.stdout}}"
+#    register: mngInst
+#    when: out.stdout| trim != ''
+
+#  - debug: var=mngInst
+
+#- hosts: mongo_svt
+#  gather_facts: yes
+#  remote_user: ec2-user
+
+#  tasks:
+#  - name: Pause
+#    pause: seconds=5
+
+- hosts: localhost
+  gather_facts: yes
+  remote_user: ec2-user
+  tasks:
+  - name: Pause
+    pause: seconds=5
+
+
+- hosts: mongo_svt
+  gather_facts: yes
+  remote_user: ubuntu
 
   pre_tasks:
-  - debug: var=hostvars[inventory_hostname]
+  - debug: var=hostvars['localhost']._raw_params
 
   - name: Install ansible key
     authorized_key: user=ec2-user
@@ -87,7 +119,3 @@
 
   roles:
   - { role: ycsb }
-
-  post_tasks:
-  - name: Pause
-    pause: seconds=5
